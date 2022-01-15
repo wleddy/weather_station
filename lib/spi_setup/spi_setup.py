@@ -1,5 +1,10 @@
 # Set up the pins to use for the SPI bus
+
+
+# LoRa radio does not seem to work us SoftSPI. Maybe too slow?
+# from machine import Pin, SoftSPI as SPI
 from machine import Pin, SPI
+
 import spi_setup.spi_config as spi_config
 
 def get_spi(device_type=None,sck=None,mosi=None,miso=None,ss=None):

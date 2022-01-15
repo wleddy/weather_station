@@ -1,5 +1,5 @@
 from time import sleep
-from machine import SPI, Pin
+from machine import Pin
 import gc
 
 PA_OUTPUT_RFO_PIN = 0

@@ -3,7 +3,7 @@ Modified to simplify object creation and make it similar to other sensor
 modules I'm using.
 """
 # Power Modes
-from machine import I2C, Pin
+from machine import SoftI2C as I2C, Pin
 from micropython import const
 from ustruct import unpack as unp
 import utime 
@@ -86,6 +86,7 @@ class BMX280():
         self.chip_id
 
         self._load_calibration()
+#         self.print_calibration()
 
         self._t_os = BMX280_TEMP_OS_2  # temperature oversampling
         self._p_os = BMX280_PRES_OS_1 #BMX280_PRES_OS_16  # pressure oversampling
@@ -224,7 +225,7 @@ class BMX280():
     def temperature(self):
         self._calc_t_fine()
         if self._t == 0:
-            self._t = ((self._t_fine * 5 + 128) >> 8) / 100.
+            self._t = ((self._t_fine * 5 + 128) >> 8) / 100
         return self._t
 
     @property

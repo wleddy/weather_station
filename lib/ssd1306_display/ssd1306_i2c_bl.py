@@ -5,7 +5,7 @@
 # Also, set clear_first default to False in the show_text method.
 
 import time
-from machine import I2C, Pin
+from machine import SoftI2C as I2C, Pin
 from ssd1306_display.ssd1306 import SSD1306_I2C
 
 class Display:
