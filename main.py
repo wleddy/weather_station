@@ -13,4 +13,5 @@ from weather_station import weather_station
 # #    for 'sleep_seconds'
 # # After deep sleep, mpu re-runs this script
 # t_adjust is a manual adjustment to the centegrade reading from the BME280
-weather_station.start_sensor('Back Yard',sleep_seconds=60,t_adjust=-2.862) 
+weather_station.start_sensor('TV Room',sleep_seconds=0,t_adjust=-0.622) 
+
