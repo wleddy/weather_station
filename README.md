@@ -23,3 +23,4 @@ other lines of the 2 sensors are tied together.
 
 ## Proof it worked...
 (images/pic.jpg)[Image]
+[images/pic.jpg](Image]
