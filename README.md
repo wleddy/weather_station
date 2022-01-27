@@ -22,4 +22,6 @@ with their bases wired together so that when one transistor is not conducting th
 other lines of the 2 sensors are tied together.
 
 ## Proof it worked...
-[images/pic.jpg](Image)
+
+![Image](images/pic.jpg)
+
