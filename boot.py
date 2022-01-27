@@ -1,3 +1,5 @@
-# This is script that run when device boot up or wake from sleep.
-
-
+# This file is executed on every boot (including wake-boot from deepsleep)
+#import esp
+#esp.osdebug(None)
+#import webrepl
+#webrepl.start()

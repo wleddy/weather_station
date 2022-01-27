@@ -70,7 +70,7 @@ class BMX280():
 
     _i2c_addr = BMX280_I2C_ADDR
 
-    def __init__(self,scl=15,sda=4):
+    def __init__(self,scl=15,sda=4,freq=500000):
         
         #self._pins = pins
         
@@ -80,8 +80,7 @@ class BMX280():
         scl_pin = Pin(scl, Pin.OUT)
         sda_pin = Pin(sda, Pin.IN)
         
-        #self._i2c = I2C(i2c, scl=scl_pin, sda=sda_pin)
-        self._i2c = I2C(scl=scl_pin, sda=sda_pin)
+        self._i2c = I2C(scl=scl_pin, sda=sda_pin,freq=freq)
 
         self.chip_id
 

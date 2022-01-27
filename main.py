@@ -1,17 +1,21 @@
-"""Main script for Weather Station sensor and base station
+"""
+    Main script for Weather Station 2
+    
+    I abandoned my original idea of using the LoRa radios
+    to communicate between the indoor and outdoor units.
+    
+    Now just use an extension wire bus to put the exterior
+    sensor out the window.
 
-Comment out one section or the other
 """
 
 from weather_station import weather_station
 
 
-# # Use the same call for remote and local
-# # Set sleep_seconds to 0 for the local, always on display
-# # Set the sleep_seconds to something else for the remote, battery powered unit
-# # Remote runs one time successfully, then goes into deep sleep
-# #    for 'sleep_seconds'
-# # After deep sleep, mpu re-runs this script
-# t_adjust is a manual adjustment to the centegrade reading from the BME280
-weather_station.start_sensor('TV Room',sleep_seconds=0,t_adjust=-0.622) 
+# adjustments are in degrees C to compensate for errors in device readings
+# weather_station.start_sensor(sleep_seconds=0,indoor_adjust=-0.21,outdoor_adjust=0.7) 
+weather_station.start_sensor(sleep_seconds=0,
+                             outdoor_adjust=-1.7222222222222,
+                             indoor_adjust=-2.83333333333333,
+                             ) 
 
