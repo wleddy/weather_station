@@ -67,6 +67,16 @@ ttgo = {
     'led':2, 
 }
 
+pico = {
+    'miso':4,
+    'mosi':3,
+    'ss':5,
+    'sck':2,
+    'dio_0':10,
+    'reset':7,
+    'led':8, 
+}
+
 ttgo_rfid = ttgo.copy()
 ttgo_rfid.update({'mosi':23,'ss':17})
 
@@ -84,6 +94,7 @@ device_types = {
     'ttgo':ttgo,
     'ttgo_rfid':ttgo_rfid,
     'M5':M5,
+    'pico':pico,
     }
 
 default_device = ttgo.copy()

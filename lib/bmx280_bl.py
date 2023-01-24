@@ -1,9 +1,13 @@
 """
 Modified to simplify object creation and make it similar to other sensor
 modules I'm using.
+
+Jan. 2023 - Allow creation or either a SoftI2C or hardware I2C instance.
+
 """
 # Power Modes
-from machine import SoftI2C as I2C, Pin
+from machine import SoftI2C, I2C, Pin
+# from machine import I2C, Pin
 from micropython import const
 from ustruct import unpack as unp
 import utime 
@@ -70,9 +74,8 @@ class BMX280():
 
     _i2c_addr = BMX280_I2C_ADDR
 
-    def __init__(self,scl=15,sda=4,freq=500000):
+    def __init__(self,scl=15,sda=4,freq=500000, bus_id=None):
         
-        #self._pins = pins
         
         self._buf1 = bytearray(1)
         self._buf2 = bytearray(2)
@@ -80,7 +83,10 @@ class BMX280():
         scl_pin = Pin(scl, Pin.OUT)
         sda_pin = Pin(sda, Pin.IN)
         
-        self._i2c = I2C(scl=scl_pin, sda=sda_pin,freq=freq)
+        if bus_id:
+            self._i2c = I2C(id=bus_id,scl=scl_pin, sda=sda_pin,freq=freq)
+        else:
+            self._i2c = SoftI2C(scl=scl_pin, sda=sda_pin,freq=freq)
 
         self.chip_id
 
@@ -261,6 +267,7 @@ class BMX280():
         '''
         Returns Chip ID
         '''
+        
         try:
             chip_id = unp('<b',self._read(const(0xD0), 1))[0]
         except OSError:

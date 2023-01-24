@@ -11,11 +11,7 @@
 
 from weather_station import weather_station
 
-
-# adjustments are in degrees C to compensate for errors in device readings
-# weather_station.start_sensor(sleep_seconds=0,indoor_adjust=-0.21,outdoor_adjust=0.7) 
-weather_station.start_sensor(sleep_seconds=0,
-                             outdoor_adjust=-1.7222222222222,
+#adjustments are in degrees C to compensate for errors in device readings
+weather_station.start_sensor(outdoor_adjust=-1.7222222222222,
                              indoor_adjust=-2.83333333333333,
-                             ) 
-
+                            ) 

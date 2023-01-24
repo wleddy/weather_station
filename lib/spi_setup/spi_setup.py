@@ -13,7 +13,7 @@ def get_spi(device_type=None,sck=None,mosi=None,miso=None,ss=None):
     if device_type:
         config = spi_config.device_types.get(device_type)
     if not config:
-        config = spi_config['default_device']
+        config = spi_config.default_device
     
     print(config)
     
