@@ -10,12 +10,13 @@
     
 """
 
-from machine import Pin, SPI, PWM, ADC
-import utime as time
+from machine import Pin, SPI, PWM, ADC, RTC
+import time as time
+import ntptime
 
 from bmx280_bl import BMX280
-from spi_setup.spi_setup import get_spi
 from display.display import Display, Button
+import wifi_connect
 
 ROW_HEIGHT = 120 # height of each row in display
 CALIBRATION_MODE = True # Display the un-adjusted temp for reference
@@ -101,8 +102,6 @@ class BMX:
 
 
 def start_sensor(**kwargs):
-    
-        
     # set up the pins to switch data sources
     indoor_adjust = kwargs.get("indoor_adjust",0) # temperature correction in C
     outdoor_adjust = kwargs.get("outdoor_adjust",0) # temperature correction in C
@@ -118,7 +117,30 @@ def start_sensor(**kwargs):
     led.freq(5000)
         
     display = get_display()
+    
+    # connect to wifi and get the time
+    display.centered_text("Waiting for connection",y=50,width=display.MAX_Y)
+    wlan = wifi_connect.connect()
+    print("waiting for connection",end='')
+    while not wlan.isconnected():
+        print(".",end='')
+        time.sleep(.25)
+    print(" got connection!")
+    try:
+        ntptime.settime()
+        dt = DisplayTime()
+        dt.set_time(3600 * -8) # subtract 8 hours from UTC
+        mes = "Got time: " + dt.time_string()
+        print(mes)
+        display.centered_text(mes,y=75,width=display.MAX_Y)
+    except Exception as e:
+        print("unable to connect to time server:",str(e))
+        display.centered_text("Time Server Failed",y=75,width=display.MAX_Y)
+        time.sleep(3)
         
+    time.sleep(2)
+    display.clear()
+
     # create 2 sensor instances
     sensors = [] #make a list
     
@@ -131,7 +153,12 @@ def start_sensor(**kwargs):
                         temp_adjust=kwargs.get("outdoor_adjust",0),
                         )
                     )
+    except Exception as e:
+        mes = "Outdoor sensor Failed"
+        print(mes)
+        display.centered_text(mes,y=25,width=display.MAX_Y)
         
+    try:
         sensors.append(BMX(
                         bus_id=0,
                         scl_pin=1,
@@ -141,8 +168,13 @@ def start_sensor(**kwargs):
                         )
                     )
     except Exception as e:
+        mes = "Indoor sensor Failed"
+        print(mes)
+        display.centered_text(mes,y=50,width=display.MAX_Y)
+        
+    if len(sensors) < 1:
+        time.sleep(5)
         display.clear()
-        display.centered_text("Failed to connect sensor")
         
     while True:
         display_row = ROW_HEIGHT * -1
@@ -176,7 +208,6 @@ class Settings:
     pass
 
 def get_display():
-#     spi,ss = get_spi('ttgo')
     settings = Settings()
     settings.spi = SPI(0,
         sck=Pin(2),
@@ -193,7 +224,7 @@ def get_display():
     display = Display(settings)
     display.clear()
     
-    display.centered_text("Starting up...",y=50,width=display.MAX_Y)
+    display.centered_text("Starting up...",y=25,width=display.MAX_Y)
     
     return display
 
@@ -279,3 +310,26 @@ def get_glif(s):
         
     return {"name":"digit_{}.raw".format(s),"w":w,"h":h,}
             
+           
+class DisplayTime:
+    def set_time(self,diff_seconds=0):
+        """diff_secconds is the number of seconds to add or subtract
+            from the current RTC datetime
+        """
+        t = time.time() + diff_seconds # returns an int
+        t = time.localtime(t) # returns a tuple eg: (Y,M,D,H,m,s,weekday,yearday)
+        rtc = RTC()
+        print("RTC time:",rtc.datetime())
+        #set the RTC date time
+        rtc.datetime((t[0],t[1],t[2],None,t[3],t[4],t[5],None))
+        print("Time set to:",time.localtime())
+    
+    def time_string(self,format=12):
+        # return the time as text
+        t = time.localtime() # returns a tuple
+        hrs = t[3]
+        if format == 12 and hrs > 12:
+            hrs -= 12
+        if format == 12 and hrs == 12:
+            hrs = 1
+        return str(hrs) + "-" + str(t[4])
