@@ -14,14 +14,14 @@ from machine import Pin, SPI, PWM, ADC, RTC
 import time as time
 import ntptime
 
-from bmx280_bl import BMX280
+from bmx import BMX
 from display.display import Display, Button
-import wifi_connect
+from wifi_connect import Wifi_Connect
 
 ROW_HEIGHT = 120 # height of each row in display
 CALIBRATION_MODE = True # Display the un-adjusted temp for reference
 
-class WeatherSensor:
+class Weather_Sensor:
     """Remote tempurature and pressure sensor
 
     Using BMP sensor to get reading
@@ -29,76 +29,6 @@ class WeatherSensor:
     
     pass
 
-class BMX:
-    
-    def __init__(self,
-                 scl_pin=1,
-                 sda_pin=0,
-                 freq=100000,
-                 bus_id=None,
-                 name="Unknown BMX",
-                 temp_adjust=0,
-                 press_adjust=0,
-                 ):
-        
-        self.bmx = None
-        self.scl_pin = scl_pin
-        self.sda_pin = sda_pin
-        self.freq = freq
-        self.bus_id = bus_id
-        self.name=name
-        self.temp_adjust = temp_adjust
-        self._saved_temp = 0
-        self.press_adjust = press_adjust
-        self._saved_press = 0
-        
-        self.bmx = BMX280(
-            bus_id=self.bus_id,
-            scl=self.scl_pin,
-            sda=self.sda_pin,
-            freq=self.freq,
-            )
-
-    def read(self):
-        """Get a reading"""
-        return {'pres':self.bmx.pressure,'temp':self.bmx.temperature}
-        
-    @property
-    def temperature(self):
-        return self.bmx.temperature
-
-    @property
-    def adjusted_temperature(self):
-        return self.saved_temp + self.temp_adjust
-    
-    @property
-    def saved_temp(self):
-        return self._saved_temp / 10
-    
-    def temp_changed(self):
-        # test/save the temp as an int to reduce rounding error
-        temp = int(self.temperature * 10)
-        if temp != self._saved_temp:
-            self._saved_temp = temp
-            return True
-        return False
-    
-    def c_to_f(self,temp_c):
-        """Convert centigrade to Fahrenheit"""
-        return (temp_c * 1.8) + 32
-
-    @property
-    def pressure(self):
-        return self.bmx.pressure
-    
-    @property
-    def adjusted_pressure(self):
-        return self.pressure + self.press_adjust
-    
-    def mlb_to_ihg(self,mlb):
-        """Convert milibars to inches of mercury"""
-        
-        return mlb * 0.00029529980164712
 
 
 def start_sensor(**kwargs):
@@ -120,24 +50,34 @@ def start_sensor(**kwargs):
     
     # connect to wifi and get the time
     display.centered_text("Waiting for connection",y=50,width=display.MAX_Y)
-    wlan = wifi_connect.connect()
-    print("waiting for connection",end='')
-    while not wlan.isconnected():
-        print(".",end='')
-        time.sleep(.25)
-    print(" got connection!")
-    try:
-        ntptime.settime()
-        dt = DisplayTime()
-        dt.set_time(3600 * -8) # subtract 8 hours from UTC
+    wifi_connected = False
+    wlan = Wifi_Connect()
+    wlan.connect()
+    if wlan.status() == 3: # connected and IP obtained
+        wifi_connected = True
+        print("Connected to",wlan.access_point)
+    else:
+        print("No Wifi Connection")
+
+#     has_time = False
+#     try:
+#         ntptime.settime()
+#         has_time = True
+#     except Exception as e:
+#         print("unable to connect to time server:",str(e))
+#         display.centered_text("Time Server Failed",y=75,width=display.MAX_Y)
+#         time.sleep(3)
+
+    dt = DisplayTime()
+    if dt.has_time:
         mes = "Got time: " + dt.time_string()
         print(mes)
         display.centered_text(mes,y=75,width=display.MAX_Y)
-    except Exception as e:
-        print("unable to connect to time server:",str(e))
-        display.centered_text("Time Server Failed",y=75,width=display.MAX_Y)
-        time.sleep(3)
-        
+    else:
+        mes = "Don't have time"
+        print(mes)
+        display.centered_text(mes,y=75,width=display.MAX_Y)
+
     time.sleep(2)
     display.clear()
 
@@ -155,7 +95,7 @@ def start_sensor(**kwargs):
                     )
     except Exception as e:
         mes = "Outdoor sensor Failed"
-        print(mes)
+        print(mes,str(e))
         display.centered_text(mes,y=25,width=display.MAX_Y)
         
     try:
@@ -169,7 +109,7 @@ def start_sensor(**kwargs):
                     )
     except Exception as e:
         mes = "Indoor sensor Failed"
-        print(mes)
+        print(mes,str(e))
         display.centered_text(mes,y=50,width=display.MAX_Y)
         
     if len(sensors) < 1:
@@ -295,8 +235,9 @@ def get_glif(s):
     # most images are this size:
     h=80
     w=48
-    if not isinstance(s,str) or len(s) != 1 or s[0] not in ["0","1","2","3","4","5","6","7","8","9",".","-",]:
+    if not isinstance(s,str) or len(s) != 1 or s[0] not in ["0","1","2","3","4","5","6","7","8","9",".","-",":",]:
         s="?"
+    
     if s == "1":
         w=38
     elif s ==".":
@@ -305,6 +246,9 @@ def get_glif(s):
     elif s == "-":
         w=38
         s="dash"
+    elif s == ":":
+        w=24
+        s="colon"
     elif s == "?":
         s = "huh"
         
@@ -312,24 +256,53 @@ def get_glif(s):
             
            
 class DisplayTime:
-    def set_time(self,diff_seconds=0):
+    
+    def __init__(self,format=12,offset_seconds=-28800,has_time=False):
+        self.format = format #12 or 24 hour display
+        self.offset_seconds = offset_seconds # seconds before or after UTC
+        # -12880 is 8 hours before UTC
+        self.has_time = has_time #Was the RTC updated from the time server
+        
+        #try to access the ntp service if needed
+        if not self.has_time:
+            try:
+                ntptime.settime() # always UTC
+                print("ntptime:",time.localtime())
+                self.has_time = True
+                self.set_RTC(self.offset_seconds)
+            except Exception as e:
+                print("unable to connect to time server:",str(e))
+
+        
+    def set_RTC(self,diff_seconds=0):
         """diff_secconds is the number of seconds to add or subtract
             from the current RTC datetime
         """
         t = time.time() + diff_seconds # returns an int
         t = time.localtime(t) # returns a tuple eg: (Y,M,D,H,m,s,weekday,yearday)
+
         rtc = RTC()
         print("RTC time:",rtc.datetime())
         #set the RTC date time
         rtc.datetime((t[0],t[1],t[2],None,t[3],t[4],t[5],None))
         print("Time set to:",time.localtime())
     
-    def time_string(self,format=12):
+    def time_string(self,format=None):
+        if not self.has_time:
+            return "--:--"
+        if not format:
+            format = self.format
         # return the time as text
         t = time.localtime() # returns a tuple
         hrs = t[3]
         if format == 12 and hrs > 12:
             hrs -= 12
-        if format == 12 and hrs == 12:
-            hrs = 1
-        return str(hrs) + "-" + str(t[4])
+        if format == 12 and hrs == 0:
+            hrs = 12
+        
+        hrs = str(hrs)
+        
+        if format == 24:
+            hrs = ("00" + hrs)[-2:]
+            
+        return hrs + ":" + ("00" + str(t[4]))[-2:]
