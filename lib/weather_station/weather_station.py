@@ -12,11 +12,17 @@
 
 from machine import Pin, SPI, PWM, ADC, RTC
 import time as time
-import ntptime
+
+HAS_NETWORK = False
+try:
+    from wifi_connect import Wifi_Connect
+    import ntptime
+    HAS_NETWORK = True
+except:
+    pass
 
 from bmx import BMX
 from display.display import Display, Button
-from wifi_connect import Wifi_Connect
 
 ROW_HEIGHT = 120 # height of each row in display
 CALIBRATION_MODE = True # Display the un-adjusted temp for reference
@@ -48,35 +54,36 @@ def start_sensor(**kwargs):
         
     display = get_display()
     
-    # connect to wifi and get the time
-    display.centered_text("Waiting for connection",y=50,width=display.MAX_Y)
-    wifi_connected = False
-    wlan = Wifi_Connect()
-    wlan.connect()
-    if wlan.status() == 3: # connected and IP obtained
-        wifi_connected = True
-        print("Connected to",wlan.access_point)
-    else:
-        print("No Wifi Connection")
+    if HAS_NETWORK:
+        # connect to wifi and get the time
+        display.centered_text("Waiting for connection",y=50,width=display.MAX_Y)
+        wifi_connected = False
+        wlan = Wifi_Connect()
+        wlan.connect()
+        if wlan.status() == 3: # connected and IP obtained
+            wifi_connected = True
+            print("Connected to",wlan.access_point)
+        else:
+            print("No Wifi Connection")
 
-#     has_time = False
-#     try:
-#         ntptime.settime()
-#         has_time = True
-#     except Exception as e:
-#         print("unable to connect to time server:",str(e))
-#         display.centered_text("Time Server Failed",y=75,width=display.MAX_Y)
-#         time.sleep(3)
+    #     has_time = False
+    #     try:
+    #         ntptime.settime()
+    #         has_time = True
+    #     except Exception as e:
+    #         print("unable to connect to time server:",str(e))
+    #         display.centered_text("Time Server Failed",y=75,width=display.MAX_Y)
+    #         time.sleep(3)
 
-    dt = DisplayTime()
-    if dt.has_time:
-        mes = "Got time: " + dt.time_string()
-        print(mes)
-        display.centered_text(mes,y=75,width=display.MAX_Y)
-    else:
-        mes = "Don't have time"
-        print(mes)
-        display.centered_text(mes,y=75,width=display.MAX_Y)
+        dt = DisplayTime()
+        if dt.has_time:
+            mes = "Got time: " + dt.time_string()
+            print(mes)
+            display.centered_text(mes,y=75,width=display.MAX_Y)
+        else:
+            mes = "Don't have time"
+            print(mes)
+            display.centered_text(mes,y=75,width=display.MAX_Y)
 
     time.sleep(2)
     display.clear()
