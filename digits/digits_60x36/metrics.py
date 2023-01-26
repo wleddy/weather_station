@@ -3,7 +3,7 @@ A class to descive the dimensions and maybe some
 other info about the digit image files in this directory
 """
 
-class metrics:
+class Metrics:
     
     # most of the characters will be WIDTH wide
     # some narrower chars are listed here.
