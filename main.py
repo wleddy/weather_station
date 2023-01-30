@@ -9,9 +9,11 @@
 
 """
 
-from weather_station import weather_station
+# from weather_station import weather_station
+# 
+# #adjustments are in degrees C to compensate for errors in device readings
+# weather_station.start_sensor()
 
-#adjustments are in degrees C to compensate for errors in device readings
-weather_station.start_sensor(outdoor_adjust=-1.7222222222222,
-                             indoor_adjust=-2.83333333333333,
-                            ) 
+from weather_station.weather_station import Weather_Station
+
+Weather_Station().start()

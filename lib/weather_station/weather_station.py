@@ -13,143 +13,245 @@
 from machine import Pin, SPI, PWM, ADC, RTC
 import time as time
 
-HAS_NETWORK = False
+WIFI_PRESENT = False #Does the UMC have Wifi?
+
 try:
     from wifi_connect import Wifi_Connect
     import ntptime
-    HAS_NETWORK = True
+    WIFI_PRESENT = True
 except:
     pass
 
 from bmx import BMX
 from display.display import Display, Button
+import glyph_metrics
 
-ROW_HEIGHT = 120 # height of each row in display
-CALIBRATION_MODE = True # Display the un-adjusted temp for reference
+CALIBRATION_MODE = False # Display the un-adjusted temp for reference
 
-class Weather_Sensor:
-    """Remote tempurature and pressure sensor
-
-    Using BMP sensor to get reading
-    """
+class Weather_Station:
     
-    pass
-
-
-
-def start_sensor(**kwargs):
-    # set up the pins to switch data sources
-    indoor_adjust = kwargs.get("indoor_adjust",0) # temperature correction in C
-    outdoor_adjust = kwargs.get("outdoor_adjust",0) # temperature correction in C
+    def __init__(self,**kwargs):
+        # set up the pins to switch data sources
+        self.indoor_adjust = kwargs.get("indoor_adjust",0) # temperature correction in C
+        self.outdoor_adjust = kwargs.get("outdoor_adjust",0) # temperature correction in C
     
-    # set up to control the screen brightness
-    # Set up the light sensor
-    daylight = ADC(Pin(27))
-    brightness = 65535
-    MAX_ADC = 65535
+        # set up to control the screen brightness
+        # Set up the light sensor
+        self.daylight = ADC(Pin(27))
+        self.brightness = kwargs.get('birghtness',65535)
+        self.MAX_ADC = 65535
 
-    led = PWM(Pin(8))
-    led.duty_u16(MAX_ADC)
-    led.freq(5000)
+        self.led = PWM(Pin(8))
+        self.led.duty_u16(self.MAX_ADC)
+        self.led.freq(5000)
+
+        self.display = get_display()
         
-    display = get_display()
+        
+        
+    def start(self):
     
-    if HAS_NETWORK:
-        # connect to wifi and get the time
-        display.centered_text("Waiting for connection",y=50,width=display.MAX_Y)
-        wifi_connected = False
-        wlan = Wifi_Connect()
-        wlan.connect()
-        if wlan.status() == 3: # connected and IP obtained
-            wifi_connected = True
-            print("Connected to",wlan.access_point)
-        else:
-            print("No Wifi Connection")
-
-    #     has_time = False
-    #     try:
-    #         ntptime.settime()
-    #         has_time = True
-    #     except Exception as e:
-    #         print("unable to connect to time server:",str(e))
-    #         display.centered_text("Time Server Failed",y=75,width=display.MAX_Y)
-    #         time.sleep(3)
+        if WIFI_PRESENT:
+            # connect to wifi and get the time
+            self.display.centered_text("Waiting for connection",y=50,width=self.display.MAX_Y)
+            wifi_connected = False
+            wlan = Wifi_Connect()
+            wlan.connect()
+            if wlan.status() == 3: # connected and IP obtained
+                wifi_connected = True
+                print("Connected to",wlan.access_point)
+            else:
+                print("No Wifi Connection")
 
         dt = DisplayTime()
         if dt.has_time:
             mes = "Got time: " + dt.time_string()
             print(mes)
-            display.centered_text(mes,y=75,width=display.MAX_Y)
+            self.display.centered_text(mes,y=75,width=self.display.MAX_Y)
         else:
             mes = "Don't have time"
             print(mes)
-            display.centered_text(mes,y=75,width=display.MAX_Y)
+            self.display.centered_text(mes,y=75,width=self.display.MAX_Y)
 
-    time.sleep(2)
-    display.clear()
+        time.sleep(2)
+        self.display.clear()
 
-    # create 2 sensor instances
-    sensors = [] #make a list
+        # create 2 sensor instances
+        sensors = [] #make a list
     
-    try:
-        sensors.append(BMX(
-                        bus_id=1,
-                        scl_pin=19,
-                        sda_pin=18,
-                        name = "Outdoor",
-                        temp_adjust=kwargs.get("outdoor_adjust",0),
+        try:
+            sensors.append(BMX(
+                            bus_id=1,
+                            scl_pin=19,
+                            sda_pin=18,
+                            name = "Outdoor",
+                            temp_adjust=self.outdoor_adjust,
+                            )
                         )
-                    )
-    except Exception as e:
-        mes = "Outdoor sensor Failed"
-        print(mes,str(e))
-        display.centered_text(mes,y=25,width=display.MAX_Y)
+        except Exception as e:
+            mes = "Outdoor sensor Failed"
+            print(mes,str(e))
+            self.display.centered_text(mes,y=25,width=self.display.MAX_Y)
         
-    try:
-        sensors.append(BMX(
-                        bus_id=0,
-                        scl_pin=1,
-                        sda_pin=0,
-                        name = "Indoor",
-                        temp_adjust=kwargs.get("indoor_adjust",0)
+        try:
+            sensors.append(BMX(
+                            bus_id=0,
+                            scl_pin=1,
+                            sda_pin=0,
+                            name = "Indoor",
+                            temp_adjust=self.indoor_adjust,
+                            )
                         )
-                    )
-    except Exception as e:
-        mes = "Indoor sensor Failed"
-        print(mes,str(e))
-        display.centered_text(mes,y=50,width=display.MAX_Y)
+        except Exception as e:
+            mes = "Indoor sensor Failed"
+            print(mes,str(e))
+            self.display.centered_text(mes,y=50,width=self.display.MAX_Y)
         
-    if len(sensors) < 1:
-        time.sleep(5)
-        display.clear()
-        
-    while True:
-        display_row = ROW_HEIGHT * -1
-        for sensor in sensors:
-            display_row += ROW_HEIGHT
-            try:
-                if CALIBRATION_MODE:
-                    print(sensor.name,":",sensor.temperature,end=" ")
-                    print("Corrected:",sensor.adjusted_temperature)
-                if sensor.temp_changed():
-                    display_temp(display,sensor,display_row)
-
-            except Exception as e:
-                print("Sensor Error for {}: ".format(sensor.name),str(e))
-                display_temp(display,"???",display_row)
-                
-        # set the display brightness
-        # daylight reading gets greater as it gets darker
-        brightness = int(daylight.read_u16())
-        if brightness > MAX_ADC / 2:
-            brightness = 20000
-        else:
-            brightness = MAX_ADC
+        if len(sensors) < 2:
+            time.sleep(5)
+            self.display.clear()
+    
+        prev_style = None
+    
+        while True:
+            if not dt.has_time:
+                dt.set_time()
             
-        led.duty_u16(brightness)
-
-        time.sleep(30)
+            if dt.has_time:
+                glyphs = glyph_metrics.Metrics_78()
+                style = "time"
+            else:
+                glyphs = glyph_metrics.Metrics_78()
+                style = "no time"
         
+            if style != prev_style:
+                prev_style = style
+                pad = (2,6) # (x,y)
+                if dt.has_time:
+                    # divide screen into 3 regions
+                    # display_coords is a list of tuples that describe the native
+                    # coords of the regions to be used for each display row
+                    # as (x,y,h,w) 
+                    self.display_coords = [
+                        (0,pad[1],glyphs.HEIGHT,self.display.MAX_Y),
+                        (pad[0]+int(self.display.MAX_X*.333),pad[1],glyphs.HEIGHT,self.display.MAX_Y),
+                        (pad[0]+int(self.display.MAX_X*.666),pad[1],glyphs.HEIGHT,self.display.MAX_Y),
+                        ]
+                else:
+                    # divide screen into 2 regions
+                    pad = (8,6) # (x,y)
+                    self.display_coords = [
+                        (pad[0],pad[1],glyphs.HEIGHT,self.display.MAX_Y),
+                        (pad[0]+int(self.display.MAX_X*.5),pad[1],glyphs.HEIGHT,self.display.MAX_Y),
+                        ]
+                    
+                # draw some lines
+                self.display.clear()
+                # Draw the lines after the fact
+                for row in range(1,len(self.display_coords)):
+                    # draw_line(x1, y1, x2, y2, color) in native coords
+                    self.display.draw_line(self.display_coords[row][0]-pad[0],
+                                           self.display_coords[row][1]-pad[1],
+                                           self.display_coords[row][0]-pad[0],
+                                           self.display_coords[row][3],
+                                           self.display.RED)
+
+            if dt.has_time:
+                t = " "+dt.time_string()+" "
+                l = glyphs.string_width(t)
+                # Display the time (native coords)
+                self.draw_glyphs(glyphs,self.display_coords[0][0],self.display_coords[0][1]-pad[1]+int((self.display.MAX_Y-l)/2),t)
+                
+            display_rows = self.display_coords[-2:] #only interested in the last two elements for temperatures
+            row = 0
+            for sensor in sensors:
+                try:
+                    if CALIBRATION_MODE:
+                        print(sensor.name,":",sensor.temperature,end=" ")
+                        print("Corrected:",sensor.adjusted_temperature)
+                    if sensor.temp_changed():
+                        self.display_temp(sensor,display_rows[row],glyphs)
+
+                except Exception as e:
+                    print("Sensor Error for {}: ".format(sensor.name),str(e))
+                    self.display_temp(sensor,display_rows[row],glyphs)
+                    
+                row +=1
+                       
+            # set the display brightness
+            # daylight reading gets greater as it gets darker
+            self.brightness = int(self.daylight.read_u16())
+            if self.brightness > self.MAX_ADC / 2:
+                self.brightness = 20000
+            else:
+                self.brightness = self.MAX_ADC
+            
+            self.led.duty_u16(self.brightness)
+            
+            time.sleep(30)
+        
+
+    def display_temp(self,sensor,row,glyphs):
+        # display the temperature
+        # row is now a tuple as (x,y)
+        
+        unadjusted_temp = ""
+        temp = "--"
+        name = "Unknown"
+
+        if not isinstance(sensor,str):
+            try:
+                temp = "{:.1f}".format(sensor.c_to_f(sensor.adjusted_temperature)) #Truncate to 1 decimal place
+                name = sensor.name
+                if CALIBRATION_MODE:
+                    unadjusted_temp = " (Raw: {:.1f}) ".format(sensor.c_to_f(sensor.saved_temp))
+            except:
+                temp = "--?"
+
+        # clear the row
+        btn = Button(self.display.settings,
+             name = "label_btn",
+             x=row[1],
+             y=row[0],
+             h=row[2],
+             w=row[3],
+             offsets=None,
+             label = " ",
+             font = None,
+             font_color = self.display.WHITE,
+             background = self.display.BLACK,
+             landscape=True,
+             )
+
+        btn.show()
+
+        # Label the value
+        # add a bit to row to create a little top padding
+        self.display.draw_text(
+                      row[0],
+                      self.display.MAX_Y - 6,
+                      name + unadjusted_temp,
+                      self.display.body_font,
+                      self.display.WHITE,
+                      background=0,
+                      landscape=True,
+                      spacing=1,
+                      )
+
+        # for testing
+#         temp = "199.0"
+
+        # Finnally, display the temperture
+        self.draw_glyphs(glyphs,row[0],row[1],temp)
+
+    def draw_glyphs(self,glyphs,x,y,value):
+        # send each digit to the display one at a time in reverse order
+
+        for i in range(len(value)-1,-1,-1):
+            glyph = glyphs.get(value[i])
+            self.display.draw_image(glyph['path'], x=x, y=y, w=glyph["h"], h=glyph["w"])
+            y += glyph["w"]
+
 
 class Settings:
     pass
@@ -175,117 +277,35 @@ def get_display():
     
     return display
 
-
-# def display_temp(display,temp,row,name):
-def display_temp(display,sensor,row):
-    # display the temperature
-    
-    unadjusted_temp = ""
-    temp = "--"
-    name = "Unknown"
-    
-    if not isinstance(sensor,str):
-        try:
-            temp = "{:.1f}".format(sensor.c_to_f(sensor.adjusted_temperature)) #Truncate to 1 decimal place
-            name = sensor.name
-            if CALIBRATION_MODE:
-                unadjusted_temp = " (Raw: {:.1f}) ".format(sensor.c_to_f(sensor.saved_temp))
-        except:
-            temp = "--?"
-    
-    # clear the row
-    btn = Button(display.settings,
-         name = "label_btn",
-         x=0,
-         y=row + 2, # down a bit so the dividing line isn't cleared
-         w=int(display.MAX_Y),
-         h=ROW_HEIGHT - 6, # same as above for bottom padding
-         offsets=None,
-         label = " ",
-         font = None,
-         font_color = display.WHITE,
-         background = display.BLACK,
-         landscape=True,
-         )
-
-    btn.show()
-    
-    # draw a divider line
-    # draw_line(x1, y1, x2, y2, color)
-    display.draw_line(int(display.MAX_X/2), 0, int(display.MAX_X/2), display.MAX_Y, display.RED)
-    
-    # add a bit to row to create a little top padding
-    display.draw_text(row+8,
-                      display.MAX_Y - 6,
-                      name + unadjusted_temp,
-                      display.body_font,
-                      display.WHITE,
-                      background=0,
-                      landscape=True,
-                      spacing=1,
-                      )
-    
-    # send each digit to the display one at a time in reverse order
-    y=10 # set some right margin
-    
-#     # for testing
-#     temp = "-9999.0"
-#     print("row: ",row)
-    
-#     for i in  [x for x in range(len(temp)-1,-1,-1)]:
-    for i in range(len(temp)-1,-1,-1):
-        glif = get_glif(temp[i])
-        display.draw_image("/lib/display/images/{}".format(glif["name"]), x=int(row+(int(display.MAX_X/2)-glif["h"]))-2, y=y, w=glif["h"], h=glif["w"])
-        y += glif["w"]
-    
-def get_glif(s):
-    # most images are this size:
-    h=80
-    w=48
-    if not isinstance(s,str) or len(s) != 1 or s[0] not in ["0","1","2","3","4","5","6","7","8","9",".","-",":",]:
-        s="?"
-    
-    if s == "1":
-        w=38
-    elif s ==".":
-        w=24
-        s = "dot"
-    elif s == "-":
-        w=38
-        s="dash"
-    elif s == ":":
-        w=24
-        s="colon"
-    elif s == "?":
-        s = "huh"
-        
-    return {"name":"digit_{}.raw".format(s),"w":w,"h":h,}
-            
            
 class DisplayTime:
     
-    def __init__(self,format=12,offset_seconds=-28800,has_time=False):
+    def __init__(self,format=12,offset_seconds=-28800):
         self.format = format #12 or 24 hour display
         self.offset_seconds = offset_seconds # seconds before or after UTC
         # -12880 is 8 hours before UTC
-        self.has_time = has_time #Was the RTC updated from the time server
+        self.has_time = False
         
         #try to access the ntp service if needed
-        if not self.has_time:
-            try:
-                ntptime.settime() # always UTC
-                print("ntptime:",time.localtime())
-                self.has_time = True
-                self.set_RTC(self.offset_seconds)
-            except Exception as e:
-                print("unable to connect to time server:",str(e))
+        self.set_time()
 
-        
-    def set_RTC(self,diff_seconds=0):
-        """diff_secconds is the number of seconds to add or subtract
-            from the current RTC datetime
+    def set_time(self):
+        """Try to access the NTP system to set the real time clock"""
+        try:
+            ntptime.settime() # always UTC
+            print("ntptime:",time.localtime())
+            self.has_time = True
+            self.set_RTC()
+        except Exception as e:
+            self.has_time = False
+            print("unable to connect to time server:",str(e))
+
+ 
+    def set_RTC(self):
+        """Set the Real Time Clock for the local time
         """
-        t = time.time() + diff_seconds # returns an int
+        
+        t = time.time() + self.offset_seconds # returns an int
         t = time.localtime(t) # returns a tuple eg: (Y,M,D,H,m,s,weekday,yearday)
 
         rtc = RTC()
@@ -313,3 +333,6 @@ class DisplayTime:
             hrs = ("00" + hrs)[-2:]
             
         return hrs + ":" + ("00" + str(t[4]))[-2:]
+        
+        
+        
