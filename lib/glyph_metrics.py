@@ -29,7 +29,10 @@ class Metrics:
         # most images are this size:
         h=self.HEIGHT
         w=self.WIDTH
+        c=str(s)
+        
         if not isinstance(s,str) or len(s) != 1 or s[0] not in ["0","1","2","3","4","5","6","7","8","9",".","-",":"," ",]:
+            print("Bad Char:",str(s))
             s="?"
 
         if s == "1":
@@ -49,7 +52,7 @@ class Metrics:
         elif s == "?":
             s = "huh"
     
-        return {"path":self.path + "digit_{}.raw".format(s),"w":w,"h":h,}
+        return {"char":c,"path":self.path + "digit_{}.raw".format(s),"w":w,"h":h,}
         
     def string_width(self,s):
         # return the length of string s when rendered with glyphs

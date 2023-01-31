@@ -30,6 +30,11 @@ class Display(ili9341):
 
         settings.display = self
         
+        try:
+            self.debug = settings.debug
+        except:
+            self.debug = False
+            
         self.font_path = '/lib/display/fonts/'
         try:
             self.font_path = settings.font_path
@@ -56,12 +61,12 @@ class Display(ili9341):
         
         if not self.body_font:
             # set up the font - Using monospace font for my sanity
-            if self.settings.debug: print('Loading fonts...')
+            if self.debug: print('Loading fonts...')
             self.body_font_width = 12 # the width of each char in px
             self.body_font_height = 24 # the height in px
             self.body_font_spacing = 1 # space between letters in px
             self.settings.body_font = self.body_font = XglcdFont(self.font_path + self.body_font_name, self.body_font_width, self.body_font_height)
-            if self.settings.debug: print('fonts loaded.')
+            if self.debug: print('fonts loaded.')
             
         
     def centered_text(self,msg,
@@ -105,17 +110,17 @@ class Display(ili9341):
             self._load_fonts() # Load fonts if not already
             font = self.body_font
         
-        if self.settings.debug: print('inital x:{}, y:{}'.format(x,y))
+        if self.debug: print('inital x:{}, y:{}'.format(x,y))
 
         width = width if width != None else 0 #full width print area
-        if self.settings.debug: print('width:',width)
+        if self.debug: print('width:',width)
         
         color = color if color != None else self.FONT_COLOR
         background = background if background != None else self.BACKGROUND
         
         # calculate the length of the message in this font
         msg_width = font.measure_text(msg)
-        if self.settings.debug: print('msg_width:',msg_width)
+        if self.debug: print('msg_width:',msg_width)
         
         final_x = x
         final_y = y
@@ -124,15 +129,15 @@ class Display(ili9341):
         if landscape:
             final_y = self.MAX_Y - x - int((width - msg_width) /2) # left hand edge of print area
             if final_y > self.MAX_Y:
-                if self.settings.debug: print('too long at:',final_y + msg_width)
+                if self.debug: print('too long at:',final_y + msg_width)
                 final_y = self.MAX_Y # too long for display area
             
             final_x = y
             
-        if self.settings.debug: print('Calculated final_y:',final_y)
+        if self.debug: print('Calculated final_y:',final_y)
         
         if x + self.body_font_height > self.MAX_X:
-            if self.settings.debug: print('too far down at: {}'.format(x))
+            if self.debug: print('too far down at: {}'.format(x))
             x = self.MAX_X - self.body_font_height
             
                     
@@ -149,7 +154,7 @@ class Display(ili9341):
         w = 18
         x = self.MAX_X - w
         
-        if self.settings.debug: print('show_progress. {}'.format(percent))
+        if self.debug: print('show_progress. {}'.format(percent))
         
         if percent == 0:
             self.fill_rectangle(x,0,w,self.MAX_Y,self.WHITE)
@@ -158,7 +163,7 @@ class Display(ili9341):
                 percent = int(self.MAX_Y * percent / 100) - w #allow room for animation
                 self.fill_rectangle(x,self.MAX_Y - percent,w,percent,self.BLACK)
             except Exception as e:
-                if self.settings.debug: print('Error in show_progress. {}'.format(str(e)))
+                if self.debug: print('Error in show_progress. {}'.format(str(e)))
 
 class Button:
     """
@@ -271,7 +276,7 @@ class Button:
         x,y,w,h = self.get_area_rect()
             
         # graphics are always positioned in the native 'portrait' orientation    
-        if self.settings.debug: print('{} rect; x:{}, y:{}, w:{}, h:{}'.format(self.name,x,y,w,h))
+        if self.display.debug: print('{} rect; x:{}, y:{}, w:{}, h:{}'.format(self.name,x,y,w,h))
         
         self.display.fill_rectangle(x,y,w,h,
                                     color=self.background,
@@ -331,7 +336,7 @@ class Button:
     
     def show(self):
         # Display a button
-        if self.settings.debug: print('{} init; x:{}, y:{}, w:{}, h:{}'.format(self.name,self.x,self.y,self.w,self.h))
+        if self.display.debug: print('{} init; x:{}, y:{}, w:{}, h:{}'.format(self.name,self.x,self.y,self.w,self.h))
         
         self.clear()
         

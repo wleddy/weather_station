@@ -11,14 +11,11 @@
 """
 
 from machine import Pin, SPI, PWM, ADC, RTC
+from instance.settings import settings
 import time as time
-
-WIFI_PRESENT = False #Does the UMC have Wifi?
 
 try:
     from wifi_connect import Wifi_Connect
-    import ntptime
-    WIFI_PRESENT = True
 except:
     pass
 
@@ -26,44 +23,40 @@ from bmx import BMX
 from display.display import Display, Button
 import glyph_metrics
 
-CALIBRATION_MODE = False # Display the un-adjusted temp for reference
-
 class Weather_Station:
     
     def __init__(self,**kwargs):
-        # set up the pins to switch data sources
         self.indoor_adjust = kwargs.get("indoor_adjust",0) # temperature correction in C
         self.outdoor_adjust = kwargs.get("outdoor_adjust",0) # temperature correction in C
-    
-        # set up to control the screen brightness
+        if not settings.debug:
+            settings.debug = kwargs.get("debug",False)
+            
         # Set up the light sensor
         self.daylight = ADC(Pin(27))
         self.brightness = kwargs.get('birghtness',65535)
         self.MAX_ADC = 65535
-
+        
+        # led controls screen brightness
         self.led = PWM(Pin(8))
         self.led.duty_u16(self.MAX_ADC)
         self.led.freq(5000)
-
+        
         self.display = get_display()
-        
-        
         
     def start(self):
     
-        if WIFI_PRESENT:
+        if settings.WIFI_PRESENT:
             # connect to wifi and get the time
             self.display.centered_text("Waiting for connection",y=50,width=self.display.MAX_Y)
-            wifi_connected = False
-            wlan = Wifi_Connect()
-            wlan.connect()
-            if wlan.status() == 3: # connected and IP obtained
-                wifi_connected = True
-                print("Connected to",wlan.access_point)
-            else:
-                print("No Wifi Connection")
+            settings.wlan = Wifi_Connect()
+            # wlan.connect()
+            # if wlan.status() == 3: # connected and IP obtained
+            #     wifi_connected = True
+            #     print("Connected to",wlan.access_point)
+            # else:
+            #     print("No Wifi Connection")
 
-        dt = DisplayTime()
+        dt = DisplayTime() 
         if dt.has_time:
             mes = "Got time: " + dt.time_string()
             print(mes)
@@ -81,28 +74,32 @@ class Weather_Station:
     
         try:
             sensors.append(BMX(
-                            bus_id=1,
-                            scl_pin=19,
-                            sda_pin=18,
-                            name = "Outdoor",
-                            temp_adjust=self.outdoor_adjust,
+                            bus_id = settings.bmx_0_bus_id,
+                            scl_pin = settings.bmx_0_scl_pin,
+                            sda_pin = settings.bmx_0_sda_pin,
+                            name = settings.bmx_0_name,
+                            temp_calibration_list = settings.bmx_0_cal_data,
+                            temp_scale = settings.bmx_0_temp_scale,
                             )
                         )
         except Exception as e:
+            print(e)
             mes = "Outdoor sensor Failed"
             print(mes,str(e))
             self.display.centered_text(mes,y=25,width=self.display.MAX_Y)
         
         try:
             sensors.append(BMX(
-                            bus_id=0,
-                            scl_pin=1,
-                            sda_pin=0,
-                            name = "Indoor",
-                            temp_adjust=self.indoor_adjust,
+                            bus_id = settings.bmx_1_bus_id,
+                            scl_pin = settings.bmx_1_scl_pin,
+                            sda_pin = settings.bmx_1_sda_pin,
+                            name = settings.bmx_1_name,
+                            temp_calibration_list = settings.bmx_1_cal_data,
+                            temp_scale = settings.bmx_1_temp_scale,
                             )
                         )
         except Exception as e:
+            print(e)
             mes = "Indoor sensor Failed"
             print(mes,str(e))
             self.display.centered_text(mes,y=50,width=self.display.MAX_Y)
@@ -166,7 +163,7 @@ class Weather_Station:
             row = 0
             for sensor in sensors:
                 try:
-                    if CALIBRATION_MODE:
+                    if settings.debug:
                         print(sensor.name,":",sensor.temperature,end=" ")
                         print("Corrected:",sensor.adjusted_temperature)
                     if sensor.temp_changed():
@@ -201,11 +198,12 @@ class Weather_Station:
 
         if not isinstance(sensor,str):
             try:
-                temp = "{:.1f}".format(sensor.c_to_f(sensor.adjusted_temperature)) #Truncate to 1 decimal place
+                temp = "{:.1f}".format(sensor.adjusted_temperature) #Truncate to 1 decimal place
                 name = sensor.name
-                if CALIBRATION_MODE:
-                    unadjusted_temp = " (Raw: {:.1f}) ".format(sensor.c_to_f(sensor.saved_temp))
-            except:
+                if settings.debug:
+                    unadjusted_temp = "(Raw: {:.1f})".format(sensor.saved_temp)
+            except Exception as e:
+                print(str(e))
                 temp = "--?"
 
         # clear the row
@@ -226,11 +224,21 @@ class Weather_Station:
         btn.show()
 
         # Label the value
-        # add a bit to row to create a little top padding
         self.display.draw_text(
                       row[0],
                       self.display.MAX_Y - 6,
-                      name + unadjusted_temp,
+                      name,
+                      self.display.body_font,
+                      self.display.WHITE,
+                      background=0,
+                      landscape=True,
+                      spacing=1,
+                      )
+        # show the uncorrected value if present
+        self.display.draw_text(
+                      row[0]+24,
+                      self.display.MAX_Y - 6,
+                      unadjusted_temp,
                       self.display.body_font,
                       self.display.WHITE,
                       background=0,
@@ -253,24 +261,9 @@ class Weather_Station:
             y += glyph["w"]
 
 
-class Settings:
-    pass
-
 def get_display():
-    settings = Settings()
-    settings.spi = SPI(0,
-        sck=Pin(2),
-        miso=Pin(4),
-        mosi=Pin(3),
-                )
-
-    settings.debug = False
-
-    settings.display_dc = 6
-    settings.display_cs = 5
-    settings.display_rst = 7
-        
     display = Display(settings)
+    display.debug = False
     display.clear()
     
     display.centered_text("Starting up...",y=25,width=display.MAX_Y)
@@ -284,21 +277,37 @@ class DisplayTime:
         self.format = format #12 or 24 hour display
         self.offset_seconds = offset_seconds # seconds before or after UTC
         # -12880 is 8 hours before UTC
+        
         self.has_time = False
+        self.UTC_time = None
         
         #try to access the ntp service if needed
         self.set_time()
 
     def set_time(self):
         """Try to access the NTP system to set the real time clock"""
-        try:
-            ntptime.settime() # always UTC
-            print("ntptime:",time.localtime())
-            self.has_time = True
-            self.set_RTC()
-        except Exception as e:
-            self.has_time = False
-            print("unable to connect to time server:",str(e))
+        
+        self.has_time = False
+        
+        if not settings.WIFI_PRESENT:
+            return
+            
+        if settings.wlan: # a Wifi_Connect instance is avaialble
+            if not settings.wlan.isconnected():
+                settings.wlan.connect()
+                if not settings.wlan.isconnected():
+                    return
+            settings.wlan.active(True)
+            
+            try:
+                import ntptime
+                ntptime.settime() # always UTC
+                self.UTC_time = time.gmtime()
+                print("ntptime:",time.localtime())
+                self.has_time = True
+                self.set_RTC()
+            except Exception as e:
+                print("unable to connect to time server:",str(e))
 
  
     def set_RTC(self):
@@ -310,7 +319,7 @@ class DisplayTime:
 
         rtc = RTC()
         print("RTC time:",rtc.datetime())
-        #set the RTC date time
+        #set the RTC date time to adjusted local time
         rtc.datetime((t[0],t[1],t[2],None,t[3],t[4],t[5],None))
         print("Time set to:",time.localtime())
     

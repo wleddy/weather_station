@@ -14,6 +14,10 @@
 # #adjustments are in degrees C to compensate for errors in device readings
 # weather_station.start_sensor()
 
+from instance.settings import settings
+settings.debug = True
+#settings.WIFI_PRESENT = False
+
 from weather_station.weather_station import Weather_Station
 
 Weather_Station().start()
