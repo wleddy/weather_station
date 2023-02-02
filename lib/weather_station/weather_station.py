@@ -51,7 +51,11 @@ class Weather_Station:
             self.display.centered_text("Waiting for connection",y=50,width=self.display.MAX_Y)
             settings.wlan = Wifi_Connect()
 
-        clk = Clock()        
+        clk = Clock()
+        # shut down the WiFi radio
+        settings.wlan.disconnect()
+        settings.wlan.active(False)
+
         if clk.has_time:
             mes = "Got time: " + clk.time_string()
             print(mes)
@@ -108,6 +112,9 @@ class Weather_Station:
         while True:
             if not clk.has_time:
                 clk.set_time()
+                # shut down the WiFi radio
+                settings.wlan.disconnect()
+                settings.wlan.active(False)
             
             if clk.has_time:
                 glyphs = glyph_metrics.Metrics_78()
@@ -203,6 +210,13 @@ class Weather_Station:
                       spacing=1,
                       )
             
+            if clk.last_sync_seconds < (time.time() - (3600 * 24)):
+                # if it's been longer than 24 hours since last sync update the clock
+                clk.set_time()
+                # shut down the WiFi radio
+                settings.wlan.disconnect()
+                settings.wlan.active(False)
+                
             # Sync the display time to the top of the minute
             # then sleep for 1 minute
             time.sleep(60 - time.localtime()[5])
@@ -313,6 +327,7 @@ class Clock:
         
         self.has_time = False
         self.UTC_time = None
+        self.last_sync_seconds = time.time()
         
         #try to access the ntp service if needed
         self.set_time()
@@ -321,7 +336,9 @@ class Clock:
         """Try to access the NTP system to set the real time clock"""
         
         self.has_time = False
-        
+        # update to the current time just to show we tried...
+        self.last_sync_seconds = time.time() 
+   
         if not settings.WIFI_PRESENT:
             return
             
@@ -339,6 +356,7 @@ class Clock:
                 print("ntptime:",time.localtime())
                 self.has_time = True
                 self.set_RTC()
+                self.last_sync_seconds = time.time()
             except Exception as e:
                 print("unable to connect to time server:",str(e))
 
