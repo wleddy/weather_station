@@ -31,7 +31,7 @@ class Metrics:
         w=self.WIDTH
         c=str(s)
         
-        if not isinstance(s,str) or len(s) != 1 or s[0] not in ["0","1","2","3","4","5","6","7","8","9",".","-",":"," ",]:
+        if not isinstance(s,str) or len(s) != 1 or s[0] not in ["0","1","2","3","4","5","6","7","8","9",".","-",":"," ","?"]:
             print("Bad Char:",str(s))
             s="?"
 

@@ -45,20 +45,31 @@ class Settings:
             
             A dict containing a list of tuples for each sensor.
             The tuples are organized as:
-                0: Observed (actual) temperature
-                1: Raw Sensor temperature
+                0: Raw Sensor temperature
+                1: Observed (actual) temperature
                 
             The tuples may be in any order but the tempurature values
             must use the same scale as the sensor (f or c)
             
         """
-        l = {"Indoor":[
-                 
-                ],
-            "Outdoor":[
-                ]
-            }
         
+        l = {'Indoor': [
+               (73.6, 68.9),
+               (73.0, 67.8),
+               (71.6, 66.9),
+               (72.3, 68.5),
+               (68.2, 65.0),
+               (70.2, 66.4),
+               ],
+            'Outdoor': [
+                (57.2, 56.3),
+                (44.4, 44.7),
+                (45.3, 45.5),
+                (51.8, 50.4),
+                ],
+            }
+
+     
         return l[name]
         
 settings = Settings()

@@ -163,11 +163,13 @@ class Weather_Station:
             row = 0
             for sensor in sensors:
                 try:
-                    if settings.debug:
-                        print(sensor.name,":",sensor.temperature,end=" ")
-                        print("Corrected:",sensor.adjusted_temperature)
                     if sensor.temp_changed():
                         self.display_temp(sensor,display_rows[row],glyphs)
+                        if settings.debug:
+                            print(sensor.name,":",sensor.saved_temp)
+                            settings.debug = False #turn off to avoid double debug messages
+                            print(sensor.name,"Corrected:",sensor.adjusted_temperature)
+                            settings.debug = True
 
                 except Exception as e:
                     print("Sensor Error for {}: ".format(sensor.name),str(e))
@@ -192,7 +194,8 @@ class Weather_Station:
         # display the temperature
         # row is now a tuple as (x,y)
         
-        unadjusted_temp = ""
+        raw_temp = ""
+        calibration_factor = ""
         temp = "--"
         name = "Unknown"
 
@@ -201,7 +204,8 @@ class Weather_Station:
                 temp = "{:.1f}".format(sensor.adjusted_temperature) #Truncate to 1 decimal place
                 name = sensor.name
                 if settings.debug:
-                    unadjusted_temp = "(Raw: {:.1f})".format(sensor.saved_temp)
+                    raw_temp = "Raw: {:.1f}".format(sensor.saved_temp)
+                    calibration_factor = "Cal: {:.2f}".format(sensor.calibration_factor)
             except Exception as e:
                 print(str(e))
                 temp = "--?"
@@ -238,7 +242,18 @@ class Weather_Station:
         self.display.draw_text(
                       row[0]+24,
                       self.display.MAX_Y - 6,
-                      unadjusted_temp,
+                      raw_temp,
+                      self.display.body_font,
+                      self.display.WHITE,
+                      background=0,
+                      landscape=True,
+                      spacing=1,
+                      )
+        # show the calibration factor if present
+        self.display.draw_text(
+                      row[0]+48,
+                      self.display.MAX_Y - 6,
+                      calibration_factor,
                       self.display.body_font,
                       self.display.WHITE,
                       background=0,
