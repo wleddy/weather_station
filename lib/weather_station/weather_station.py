@@ -32,9 +32,10 @@ class Weather_Station:
             settings.debug = kwargs.get("debug",False)
             
         # Set up the light sensor
-        self.daylight = ADC(Pin(27))
+        self.daylight_sensor = ADC(Pin(27))
         self.brightness = kwargs.get('birghtness',65535)
         self.MAX_ADC = 65535
+        self.daylight = 65535
         
         # led controls screen brightness
         self.led = PWM(Pin(8))
@@ -179,16 +180,36 @@ class Weather_Station:
                        
             # set the display brightness
             # daylight reading gets greater as it gets darker
-            self.brightness = int(self.daylight.read_u16())
-            if self.brightness > self.MAX_ADC / 2:
+            self.daylight = int(self.daylight_sensor.read_u16())
+            if settings.debug:
+                self.display.draw_text(
+                      0,
+                      self.display.MAX_Y,
+                      "Dl: " + str(self.daylight),
+                      self.display.body_font,
+                      self.display.WHITE,
+                      background=0,
+                      landscape=True,
+                      spacing=1,
+                      )
+            self.brightness = self.MAX_ADC - int(self.daylight * .75)
+            if self.brightness < 20000:
                 self.brightness = 20000
-            else:
-                self.brightness = self.MAX_ADC
-            
+
             self.led.duty_u16(self.brightness)
-            
+            if settings.debug:
+                self.display.draw_text(
+                      25,
+                      self.display.MAX_Y,
+                      "Br: " + str(self.brightness),
+                      self.display.body_font,
+                      self.display.WHITE,
+                      background=0,
+                      landscape=True,
+                      spacing=1,
+                      )
+
             time.sleep(30)
-        
 
     def display_temp(self,sensor,row,glyphs):
         # display the temperature
