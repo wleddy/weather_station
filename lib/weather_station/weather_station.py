@@ -50,16 +50,10 @@ class Weather_Station:
             # connect to wifi and get the time
             self.display.centered_text("Waiting for connection",y=50,width=self.display.MAX_Y)
             settings.wlan = Wifi_Connect()
-            # wlan.connect()
-            # if wlan.status() == 3: # connected and IP obtained
-            #     wifi_connected = True
-            #     print("Connected to",wlan.access_point)
-            # else:
-            #     print("No Wifi Connection")
 
-        dt = DisplayTime() 
-        if dt.has_time:
-            mes = "Got time: " + dt.time_string()
+        clk = Clock()        
+        if clk.has_time:
+            mes = "Got time: " + clk.time_string()
             print(mes)
             self.display.centered_text(mes,y=75,width=self.display.MAX_Y)
         else:
@@ -112,10 +106,10 @@ class Weather_Station:
         prev_style = None
     
         while True:
-            if not dt.has_time:
-                dt.set_time()
+            if not clk.has_time:
+                clk.set_time()
             
-            if dt.has_time:
+            if clk.has_time:
                 glyphs = glyph_metrics.Metrics_78()
                 style = "time"
             else:
@@ -125,7 +119,7 @@ class Weather_Station:
             if style != prev_style:
                 prev_style = style
                 pad = (2,6) # (x,y)
-                if dt.has_time:
+                if clk.has_time:
                     # divide screen into 3 regions
                     # display_coords is a list of tuples that describe the native
                     # coords of the regions to be used for each display row
@@ -154,8 +148,8 @@ class Weather_Station:
                                            self.display_coords[row][3],
                                            self.display.RED)
 
-            if dt.has_time:
-                t = " "+dt.time_string()+" "
+            if clk.has_time:
+                t = " "+clk.time_string()+" "
                 l = glyphs.string_width(t)
                 # Display the time (native coords)
                 self.draw_glyphs(glyphs,self.display_coords[0][0],self.display_coords[0][1]-pad[1]+int((self.display.MAX_Y-l)/2),t)
@@ -208,8 +202,11 @@ class Weather_Station:
                       landscape=True,
                       spacing=1,
                       )
-
-            time.sleep(30)
+            
+            # Sync the display time to the top of the minute
+            # then sleep for 1 minute
+            time.sleep(60 - time.localtime()[5])
+              
 
     def display_temp(self,sensor,row,glyphs):
         # display the temperature
@@ -307,7 +304,7 @@ def get_display():
     return display
 
            
-class DisplayTime:
+class Clock:
     
     def __init__(self,format=12,offset_seconds=-28800):
         self.format = format #12 or 24 hour display
