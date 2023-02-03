@@ -1,14 +1,20 @@
 # weather_station
 
-A Micropython project to create a simple temperature display using two BMP280 sensors.
+A Micropython project to create a simple temperature display using two BMP280 sensors. One to 
+display the indoor temperature and one for the outdoor.
 
 This version is set up for the Raspberry Pi Pico W with wireless connection. Currently only uses
 the wireless connection to get the current time from a ntp service. The idea is to display the time
-as well as the temperatre. 
+as well as the temperate. 
+
+It works with either the Pico W or the original Pico and should work with most MicroPython builds.
+
+In the case where the device does not have Wifi or Wifi is not available it defaults to a display
+of just the indoor and outdoor temperatures.
 
 ## Hardware:
 
-### Processor: Raspberry Pi Pico W
+### Processor: Raspberry Pi Pico W or Pico without WiFi
 
 ### I2C Temperature sensors: 
 
@@ -21,17 +27,20 @@ The display is a 240 X 320px TFT display connected via the SPI bus.
 
 ## Display Images:
 
-The digits that are the primary display elements are rendered from image file rather than TFT fonts.
-
-The initial version had only two temperature lines plus a descriptive line for each. The digit images
-were generally 80 X 48px but some of the narrow elements were narrower.
-
-For this version the images will need to be reduced to 60px X 36px.
+The digits that are the primary display elements are rendered from image file rather than TFT fonts though
+some label and startup text is displayed using the Unispace12x24.c font file.
 
 For use with the display the images created in png format need to be converted to the .raw format using the
 python script img2rgb565.py.
 
 ## Proof it worked...
 
+With time:
+
+![Image](images/pic_with_time.jpg)
+
+Without time:
+
 ![Image](images/pic.jpg)
+
 
