@@ -99,27 +99,26 @@ class Weather_Station:
             self.display.clear()
     
         prev_style = None
+        glyphs = glyph_metrics.Metrics_78()
     
         while True:
             if not clk.has_time and clk.last_sync_seconds < time.time() - 60:
                 # if we just tryied to get the time and failed, don't try for a while
                 clk.set_time()
-            
+                   
             if clk.has_time:
-                glyphs = glyph_metrics.Metrics_78()
                 style = "time"
             else:
-                glyphs = glyph_metrics.Metrics_78()
                 style = "no time"
         
             if style != prev_style:
                 prev_style = style
-                pad = (2,6) # (x,y)
                 if clk.has_time:
                     # divide screen into 3 regions
                     # display_coords is a list of tuples that describe the native
                     # coords of the regions to be used for each display row
                     # as (x,y,h,w) 
+                    pad = (2,6) # (x,y)
                     self.display_coords = [
                         (0,pad[1],glyphs.HEIGHT,self.display.MAX_Y),
                         (pad[0]+int(self.display.MAX_X*.333),pad[1],glyphs.HEIGHT,self.display.MAX_Y),
@@ -127,7 +126,7 @@ class Weather_Station:
                         ]
                 else:
                     # divide screen into 2 regions
-                    pad = (8,6) # (x,y)
+                    pad = (15,6) # (x,y)
                     self.display_coords = [
                         (pad[0],pad[1],glyphs.HEIGHT,self.display.MAX_Y),
                         (pad[0]+int(self.display.MAX_X*.5),pad[1],glyphs.HEIGHT,self.display.MAX_Y),
