@@ -111,8 +111,10 @@ class Weather_Station:
             else:
                 style = "no time"
         
+            force_refresh = False
             if style != prev_style:
                 prev_style = style
+                force_refresh = True
                 if clk.has_time:
                     # divide screen into 3 regions
                     # display_coords is a list of tuples that describe the native
@@ -153,7 +155,7 @@ class Weather_Station:
             row = 0
             for sensor in sensors:
                 try:
-                    if sensor.temp_changed():
+                    if sensor.temp_changed() or force_refresh:
                         self.display_temp(sensor,display_rows[row],glyphs)
                         if settings.debug:
                             print(sensor.name,":",sensor.saved_temp)
