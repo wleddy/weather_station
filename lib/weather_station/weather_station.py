@@ -10,18 +10,15 @@
     
 """
 
-from machine import Pin, SPI, PWM, ADC, RTC
+from machine import Pin, SPI, PWM, ADC
 from instance.settings import settings
 import time as time
-
-try:
-    from wifi_connect import Wifi_Connect
-except:
-    pass
 
 from bmx import BMX
 from display.display import Display, Button
 import glyph_metrics
+from ntp_clock import Clock
+
 
 class Weather_Station:
     
@@ -46,24 +43,18 @@ class Weather_Station:
         
     def start(self):
     
-        if settings.WIFI_PRESENT:
-            # connect to wifi and get the time
-            self.display.centered_text("Waiting for connection",y=50,width=self.display.MAX_Y)
-            settings.wlan = Wifi_Connect()
+        self.display.centered_text("Waiting for connection",y=50,width=self.display.MAX_Y)
 
         clk = Clock()
-        # shut down the WiFi radio
-        settings.wlan.disconnect()
-        settings.wlan.active(False)
-
+        clk.set_time()
         if clk.has_time:
             mes = "Got time: " + clk.time_string()
             print(mes)
-            self.display.centered_text(mes,y=75,width=self.display.MAX_Y)
         else:
             mes = "Don't have time"
             print(mes)
-            self.display.centered_text(mes,y=75,width=self.display.MAX_Y)
+            
+        self.display.centered_text(mes,y=75,width=self.display.MAX_Y)
 
         time.sleep(2)
         self.display.clear()
@@ -110,11 +101,9 @@ class Weather_Station:
         prev_style = None
     
         while True:
-            if not clk.has_time:
+            if not clk.has_time and clk.last_sync_seconds < time.time() - 60:
+                # if we just tryied to get the time and failed, don't try for a while
                 clk.set_time()
-                # shut down the WiFi radio
-                settings.wlan.disconnect()
-                settings.wlan.active(False)
             
             if clk.has_time:
                 glyphs = glyph_metrics.Metrics_78()
@@ -213,9 +202,6 @@ class Weather_Station:
             if clk.last_sync_seconds < (time.time() - (3600 * 24)):
                 # if it's been longer than 24 hours since last sync update the clock
                 clk.set_time()
-                # shut down the WiFi radio
-                settings.wlan.disconnect()
-                settings.wlan.active(False)
                 
             # Sync the display time to the top of the minute
             # then sleep for 1 minute
@@ -318,81 +304,5 @@ def get_display():
     return display
 
            
-class Clock:
-    
-    def __init__(self,format=12,offset_seconds=-28800):
-        self.format = format #12 or 24 hour display
-        self.offset_seconds = offset_seconds # seconds before or after UTC
-        # -12880 is 8 hours before UTC
-        
-        self.has_time = False
-        self.UTC_time = None
-        self.last_sync_seconds = time.time()
-        
-        #try to access the ntp service if needed
-        self.set_time()
-
-    def set_time(self):
-        """Try to access the NTP system to set the real time clock"""
-        
-        self.has_time = False
-        # update to the current time just to show we tried...
-        self.last_sync_seconds = time.time() 
-   
-        if not settings.WIFI_PRESENT:
-            return
-            
-        if settings.wlan: # a Wifi_Connect instance is avaialble
-            if not settings.wlan.isconnected():
-                settings.wlan.connect()
-                if not settings.wlan.isconnected():
-                    return
-            settings.wlan.active(True)
-            
-            try:
-                import ntptime
-                ntptime.settime() # always UTC
-                self.UTC_time = time.gmtime()
-                print("ntptime:",time.localtime())
-                self.has_time = True
-                self.set_RTC()
-                self.last_sync_seconds = time.time()
-            except Exception as e:
-                print("unable to connect to time server:",str(e))
-
- 
-    def set_RTC(self):
-        """Set the Real Time Clock for the local time
-        """
-        
-        t = time.time() + self.offset_seconds # returns an int
-        t = time.localtime(t) # returns a tuple eg: (Y,M,D,H,m,s,weekday,yearday)
-
-        rtc = RTC()
-        print("RTC time:",rtc.datetime())
-        #set the RTC date time to adjusted local time
-        rtc.datetime((t[0],t[1],t[2],None,t[3],t[4],t[5],None))
-        print("Time set to:",time.localtime())
-    
-    def time_string(self,format=None):
-        if not self.has_time:
-            return "--:--"
-        if not format:
-            format = self.format
-        # return the time as text
-        t = time.localtime() # returns a tuple
-        hrs = t[3]
-        if format == 12 and hrs > 12:
-            hrs -= 12
-        if format == 12 and hrs == 0:
-            hrs = 12
-        
-        hrs = str(hrs)
-        
-        if format == 24:
-            hrs = ("00" + hrs)[-2:]
-            
-        return hrs + ":" + ("00" + str(t[4]))[-2:]
-        
         
         
