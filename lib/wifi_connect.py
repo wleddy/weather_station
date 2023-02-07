@@ -20,11 +20,14 @@ class Wifi_Connect:
             print("known_ssids:",c)
         except Exception as e:
             print(str(e))
-            
+        
         known_ssids = {}
         for x in c:
             l = x.split(",")
-            known_ssids[l[0].strip()] = l[1].strip()
+            known_ssids[l[0].strip()] = None #ssid name without password
+            if len(l) == 2:
+                # Has password... update value
+                known_ssids[l[0].strip()] = l[1].strip()
             
         # if known_ssids, continue
         if len(known_ssids) > 0:
