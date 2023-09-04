@@ -14,6 +14,7 @@ class BMX:
                  freq=100000,
                  bus_id=None,
                  name="Unknown BMX",
+                 sensor_id=0,
                  temp_calibration_list=[],
                  press_adjust=0,
                  temp_scale="f", # f or c
@@ -25,6 +26,7 @@ class BMX:
         self.freq = freq
         self.bus_id = bus_id
         self.name=name
+        self.sensor_id = sensor_id
         self.temp_scale = str(temp_scale).lower().strip()
         self.temp_calibration_list = temp_calibration_list
         if not isinstance(self.temp_calibration_list,list):
@@ -56,6 +58,43 @@ class BMX:
     def adjusted_temperature(self):
         return self.saved_temp * self.calibration_factor
     
+#     @property
+#     def calibration_factor(self):
+#         """Return the calibation factor based on self.saved_temp
+#             tuple order is (raw sensor temp, observed temp)
+#         """
+#         c = None
+#         if len(self.temp_calibration_list) > 0:
+#             print(self.temp_calibration_list)
+#             s = self.saved_temp
+#             low_value = (s,s)
+#             high_value = (s,s)
+#             if s <= self.temp_calibration_list[0][0]:
+#                 c = self.temp_calibration_list[0]
+#             elif s >= self.temp_calibration_list[len(self.temp_calibration_list)-1][0]:
+#                 c = self.temp_calibration_list[len(self.temp_calibration_list)-1]
+#             else:
+#                 for t in self.temp_calibration_list:
+#                     if t[0] <= s and t[0] <= low_value[0]:
+#                         low_value = t
+#                     if t[0] >= s or t[0] >= high_value[0]:
+#                         high_value = t
+#                         
+#                 # get the average of the raw temps and the observed temps
+#                 raw = (low_value[0] + high_value[0]) / 2
+#                 observed = (low_value[1] + high_value[1]) / 2 
+#                 c = (raw,observed)
+#                 
+#         if not c:
+#             return 1 # No correction
+#         else:
+#             if settings.debug:
+#                 print("{} Calibration: {}:{} = {:.3f}".format(self.name,str(low_value),str(high_value),c[1]/c[0]))
+#                 
+#             # add a bit to avoid div by 0 error
+#             return round(c[1]/(c[0] + 0.00001),2)
+#     
+    
     @property
     def calibration_factor(self):
         """Return the calibation factor based on self.saved_temp
@@ -63,34 +102,32 @@ class BMX:
         """
         c = None
         if len(self.temp_calibration_list) > 0:
+#             print(self.temp_calibration_list)
             s = self.saved_temp
             low_value = (s,s)
             high_value = (s,s)
-            if s <= self.temp_calibration_list[0][0]:
-                c = self.temp_calibration_list[0]
-            elif s >= self.temp_calibration_list[len(self.temp_calibration_list)-1][0]:
-                c = self.temp_calibration_list[len(self.temp_calibration_list)-1]
-            else:
-                for t in self.temp_calibration_list:
-                    if t[0] <= s and t[0] <= low_value[0]:
-                        low_value = t
-                    if t[0] >= s or t[0] >= high_value[0]:
-                        high_value = t
+
+            for t in self.temp_calibration_list:
+                if t[0] <= s and t[0] <= low_value[0]:
+                    low_value = t
+                if t[0] >= s or t[0] >= high_value[0]:
+                    high_value = t
                         
-                # get the average of the raw temps and the observed temps
-                raw = (low_value[0] + high_value[0]) / 2
-                observed = (low_value[1] + high_value[1]) / 2 
-                c = (raw,observed)
+            # get the average of the raw temps and the observed temps
+            raw = (low_value[0] + high_value[0]) / 2
+            observed = (low_value[1] + high_value[1]) / 2 
+            c = (raw,observed)
                 
         if not c:
             return 1 # No correction
         else:
-            if settings.debug:
-                print("{} Calibration: {}:{} = {:.3f}".format(self.name,str(low_value),str(high_value),c[1]/c[0]))
+#             if settings.debug:
+#                 print("c",c,"low",low_value,"high",high_value)
+#                 print("{} Calibration: {}:{} = {:.3f}".format(self.name,str(low_value),str(high_value),c[1]/c[0]))
                 
             # add a bit to avoid div by 0 error
-            return round((c[1]/c[0]) + 0.00001,2)
-    
+            return round(c[1]/(c[0] + 0.00001),2)
+ 
     @property
     def saved_temp(self):
         if self.temp_scale == "f":

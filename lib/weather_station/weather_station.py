@@ -10,15 +10,18 @@
     
 """
 
-from machine import Pin, SPI, PWM, ADC
+from machine import Pin, SPI, PWM, ADC, RTC
 from instance.settings import settings
-import time as time
+import time
 
 from bmx import BMX
 from display.display import Display, Button
 import glyph_metrics
 from ntp_clock import Clock
+from web_client import get
 
+import gc
+gc.enable()
 
 class Weather_Station:
     
@@ -68,6 +71,7 @@ class Weather_Station:
                             scl_pin = settings.bmx_0_scl_pin,
                             sda_pin = settings.bmx_0_sda_pin,
                             name = settings.bmx_0_name,
+                            sensor_id = settings.bmx_0_sensor_id,
                             temp_calibration_list = settings.bmx_0_cal_data,
                             temp_scale = settings.bmx_0_temp_scale,
                             )
@@ -84,6 +88,7 @@ class Weather_Station:
                             scl_pin = settings.bmx_1_scl_pin,
                             sda_pin = settings.bmx_1_sda_pin,
                             name = settings.bmx_1_name,
+                            sensor_id = settings.bmx_1_sensor_id,
                             temp_calibration_list = settings.bmx_1_cal_data,
                             temp_scale = settings.bmx_1_temp_scale,
                             )
@@ -159,9 +164,15 @@ class Weather_Station:
                         self.display_temp(sensor,display_rows[row],glyphs)
                         if settings.debug:
                             print(sensor.name,":",sensor.saved_temp)
-                            settings.debug = False #turn off to avoid double debug messages
+#                             settings.debug = False #turn off to avoid double debug messages
                             print(sensor.name,"Corrected:",sensor.adjusted_temperature)
-                            settings.debug = True
+#                             settings.debug = True
+                            
+                        export_reading(sensor)
+                            
+                    elif settings.debug:
+                        print("No Temp change for sensor",sensor.name)
+
 
                 except Exception as e:
                     print("Sensor Error for {}: ".format(sensor.name),str(e))
@@ -172,33 +183,22 @@ class Weather_Station:
             # set the display brightness
             # daylight reading gets greater as it gets darker
             self.daylight = int(self.daylight_sensor.read_u16())
-            if settings.debug:
-                self.display.draw_text(
-                      0,
-                      self.display.MAX_Y,
-                      "Dl: " + str(self.daylight),
-                      self.display.body_font,
-                      self.display.WHITE,
-                      background=0,
-                      landscape=True,
-                      spacing=1,
-                      )
-            self.brightness = self.MAX_ADC - int(self.daylight * .75)
+#             if settings.debug:
+#                 self.display.draw_text(
+#                       0,
+#                       self.display.MAX_Y,
+#                       "Dl: " + str(self.daylight),
+#                       self.display.body_font,
+#                       self.display.WHITE,
+#                       background=0,
+#                       landscape=True,
+#                       spacing=1,
+#                       )
+            self.brightness = self.MAX_ADC - int(self.daylight * .25)
             if self.brightness < 20000:
                 self.brightness = 20000
 
             self.led.duty_u16(self.brightness)
-            if settings.debug:
-                self.display.draw_text(
-                      25,
-                      self.display.MAX_Y,
-                      "Br: " + str(self.brightness),
-                      self.display.body_font,
-                      self.display.WHITE,
-                      background=0,
-                      landscape=True,
-                      spacing=1,
-                      )
             
             if clk.last_sync_seconds < (time.time() - (3600 * 24)):
                 # if it's been longer than 24 hours since last sync update the clock
@@ -222,9 +222,9 @@ class Weather_Station:
             try:
                 temp = "{:.1f}".format(sensor.adjusted_temperature) #Truncate to 1 decimal place
                 name = sensor.name
-                if settings.debug:
-                    raw_temp = "Raw: {:.1f}".format(sensor.saved_temp)
-                    calibration_factor = "Cal: {:.2f}".format(sensor.calibration_factor)
+#                 if settings.debug:
+#                     raw_temp = "R: {:.1f}".format(sensor.saved_temp)
+#                     calibration_factor = "C: {:.2f}".format(sensor.calibration_factor)
             except Exception as e:
                 print(str(e))
                 temp = "--?"
@@ -305,5 +305,39 @@ def get_display():
     return display
 
            
+def export_reading(sensor):
+    #Send the current temp to the temp_center app
+    if not settings.wlan.isconnected():
+        print("Trying to connect")
+        settings.wlan.connect()
+        time.sleep(2)
+    if settings.wlan.isconnected():
         
+        gc.collect()
+
+        try:
+            r = get("{url}/{sensor_id}/{temp}/{raw_temp}/{scale}/".format(
+                        url = settings.temp_center_url,
+                        sensor_id=sensor.sensor_id,
+                        temp=sensor.adjusted_temperature,
+                        raw_temp = sensor.saved_temp,
+                        scale=sensor.temp_scale,
+                        )
+                    )
+            if settings.debug:
+                print("Get response:",r.text)
+            del r
+            gc.collect()
+            
+        except Exception as e:
+            print("Export Reading Failed for",sensor.name,":",str(e))
+            gc.enable()
+            print("Alocated Memory:",gc.mem_alloc())
+            print("Avaliable Memory:",gc.mem_free())
+            gc.collect()
+            print("Now Available Mem.:",gc.mem_free())
+            
+    elif settings.debug:
+        print("Not Connected")
+
         

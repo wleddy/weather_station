@@ -9,9 +9,11 @@
 
 """
 
+
+from instance.settings import settings
+settings.debug = True
+
 from weather_station.weather_station import Weather_Station
 
-Weather_Station(
-    outdoor_adjust=-5.88888888888891,
-    indoor_adjust=-2.83333333333333,
-    ).start()
+Weather_Station().start()
+
