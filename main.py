@@ -11,7 +11,6 @@
 
 from instance.settings import settings
 settings.debug = True
-#settings.WIFI_PRESENT = False
 
 from weather_station.weather_station import Weather_Station
 
