@@ -16,9 +16,10 @@ import time
 
 from bmx import BMX
 from display.display import Display, Button
-import glyph_metrics
+from display import glyph_metrics
 from ntp_clock import Clock
 from web_client import get
+from wifi_connect import Wifi_Connect
 
 import gc
 gc.enable()
@@ -45,6 +46,13 @@ class Weather_Station:
         self.display = get_display()
         
     def start(self):
+        
+        # connect to the server if we can
+        try:
+            settings.wlan = Wifi_Connect()
+            settings.wlan.connect()
+        except:
+            pass
     
         self.display.centered_text("Waiting for connection",y=50,width=self.display.MAX_Y)
 

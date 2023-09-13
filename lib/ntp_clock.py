@@ -28,7 +28,6 @@ class Clock:
         self.has_time = False
         self.UTC_time = None
         self.last_sync_seconds = time.time()
-        self.network_active = False
 
     
     def _connect(self):
@@ -45,9 +44,6 @@ class Clock:
                     
         # a Wifi_Connect instance is avaialble
         try:
-            # preserve the current active status
-            self.network_active = settings.wlan.active()
-
             if not settings.wlan.isconnected():
                 settings.wlan.connect()
                 if not settings.wlan.isconnected():
