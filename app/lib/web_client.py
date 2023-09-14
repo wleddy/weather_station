@@ -32,6 +32,7 @@ class Response(object):
 
     @property
     def text(self):
+        import pdb;pdb.set_trace()
         content = self.content
 
         return str(content, self.encoding) if content else ''
