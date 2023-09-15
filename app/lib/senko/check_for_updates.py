@@ -8,9 +8,8 @@ from wifi_connect import Wifi_Connect
 
 def run():
     try:
-        if not settings.wlan:
-            settings.wlan = Wifi_Connect()
-            settings.wlan.connect()
+        settings.wlan = Wifi_Connect()
+        settings.wlan.connect()
         if not settings.wlan.is_connected():
             return
     except:
@@ -40,6 +39,8 @@ def run():
         machine.reset()
     else:
         print('No update needed')
+
+
 
 
 
