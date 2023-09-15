@@ -54,7 +54,6 @@ class Senko:
         changes = []
 
         for file in self.files:
-            print('Checking file:',file)
             gc.enable()
             gc.collect()
             latest_version = self._get_file(self.url + "/" + file)
