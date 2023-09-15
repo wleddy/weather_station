@@ -20,6 +20,7 @@ from display import glyph_metrics
 from ntp_clock import Clock
 from web_client import get
 from wifi_connect import Wifi_Connect
+from senko.check_for_updates import Check_For_Updates
 
 import gc
 gc.enable()
@@ -46,6 +47,9 @@ class Weather_Station:
         self.display = get_display()
         
     def start(self):
+        
+        # check for updates
+        Check_For_Updates(display=self.display,fetch_only=False).run()
         
         # connect to the server if we can
         try:
