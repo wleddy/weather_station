@@ -5,16 +5,16 @@ from instance.settings import settings
 import machine
 from senko import senko
 from wifi_connect import Wifi_Connect
-import time
 
 def run():
     #   url='https://github.com/wleddy/weather_station/tree/master/app/'
 
- 
-    settings.wlan = Wifi_Connect()
-    settings.wlan.connect()
-    
-    if not settings.wlan.is_connected():
+    try:
+        settings.wlan = Wifi_Connect()
+        settings.wlan.connect()
+        if not settings.wlan.is_connected():
+            return
+    except:
         return
         
     OTA = senko.Senko(
@@ -40,19 +40,12 @@ def run():
     print("Checking for updates")
 #     print('file_sets:',file_sets)
     changed_files = []
-    for set in file_sets: # a list of lists
-        
-        print('Checking set:',set)
-        OTA.files = set
-        changed_files.append(OTA._check_all())
-        print('{} Changes'.format(len(changed_files)))
-          
     has_changes = False
-    for set in changed_files: # this is a list of list
+    for set in file_sets: # a list of lists
         if set:
             OTA.files = set
             has_changes = True
-            print('Updating:',OTA.files)
+            print('   --- Updating:',OTA.files)
             OTA.update()
         
     if has_changes:
@@ -60,3 +53,5 @@ def run():
         machine.reset()
     else:
         print('No update needed')
+
+
