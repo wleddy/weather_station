@@ -7,6 +7,7 @@ from senko import senko
 from wifi_connect import Wifi_Connect
 
 def run():
+    """Update any files that need it..."""
     try:
         settings.wlan = Wifi_Connect()
         settings.wlan.connect()
