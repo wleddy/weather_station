@@ -11,8 +11,8 @@
 
 
 from weather_station.weather_station import Weather_Station
-from senko import check_for_updates
+from instance.settings import settings
 
-check_for_updates.run()
+settings.debug = True
 
 Weather_Station().start()
