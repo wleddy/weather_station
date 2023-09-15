@@ -7,11 +7,10 @@ from senko import senko
 from wifi_connect import Wifi_Connect
 
 def run():
-    #   url='https://github.com/wleddy/weather_station/tree/master/app/'
-
     try:
-        settings.wlan = Wifi_Connect()
-        settings.wlan.connect()
+        if not settings.wlan:
+            settings.wlan = Wifi_Connect()
+            settings.wlan.connect()
         if not settings.wlan.is_connected():
             return
     except:
@@ -25,33 +24,24 @@ def run():
     # Seems to fail if I try to check more than 3 files in a block
     from start_up.ota_files import get_ota_file_list
     master_list = get_ota_file_list()
-    
-    # break up the master list into managable chunks
-    file_sets = []
-    while master_list:
-        temp_list = []
-        for i in range(2):
-            if len(master_list) > 0:
-                temp_list.append(master_list.pop(0))
-        if temp_list:
-#             print('temp_list:',temp_list)
-            file_sets.append(temp_list)
             
     print("Checking for updates")
 #     print('file_sets:',file_sets)
-    changed_files = []
     has_changes = False
-    for set in file_sets: # a list of lists
-        if set:
-            OTA.files = set
+    for file in master_list: # a list of lists
+        OTA.files = [file,]
+        print('Checking:',file)
+        if OTA.update():
             has_changes = True
-            print('   --- Updating:',OTA.files)
-            OTA.update()
+            print(f'   +++ {file} Updated')
         
     if has_changes:
         print("Updated to the latest version! Rebooting...")
         machine.reset()
     else:
         print('No update needed')
+
+
+
 
 
