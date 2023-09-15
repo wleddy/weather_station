@@ -11,4 +11,5 @@ def get_ota_file_list():
         'lib/bmx.py',
         'lib/ntp_clock.py',
         'lib/web_client.py',
+        'lib/wifi_connect.py',
         ]
