@@ -42,7 +42,8 @@ class Senko:
         try:
             payload = urequests.get(url, headers=self.headers)
             code = payload.status_code
-        except:
+        except Exception as e:
+            print('Error getting file:',str(e))
             return None
         
         if code == 200:
