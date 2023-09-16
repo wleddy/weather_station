@@ -49,7 +49,9 @@ class Weather_Station:
     def start(self):
         
         # check for updates
-        Check_For_Updates(display=self.display,fetch_only=False).run()
+        self.display.centered_text(
+            "Checking for updates...", y=50, width=self.display.MAX_Y)
+        Check_For_Updates(display=None,fetch_only=False).run()
         
         
         try:
@@ -221,7 +223,10 @@ class Weather_Station:
             try:
                 # check for updates
                 if Check_For_Updates(display=None, fetch_only=True).run():
-                    Check_For_Updates(display=self.display, fetch_only=False).run()
+                    display.clear()
+                    self.display.centered_text(
+                        "Checking for updates", y=50, width=self.display.MAX_Y)
+                    Check_For_Updates(display=None, fetch_only=False).run()
             except:
                 pass
                 
