@@ -14,6 +14,7 @@ class Wifi_Connect:
         
     def connect(self):
         print('connecting...')
+        self.wlan.active(True)
         # try to use last connection
         last_dict = self._last_ssid()
         if last_dict:
