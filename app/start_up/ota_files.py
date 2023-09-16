@@ -6,6 +6,7 @@ import os
 def get_ota_file_list():
     return [
         'main.py',
+        'start_up/ota_files.py',
         'lib/senko/check_for_updates.py',
         'lib/weather_station/weather_station.py',
         'lib/bmx.py',
