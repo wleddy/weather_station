@@ -19,7 +19,7 @@ from display.display import Display, Button
 from display import glyph_metrics
 from ntp_clock import Clock
 from web_client import get
-from wifi_connect import Wifi_Connect
+from wifi_connect import connection
 from senko.check_for_updates import Check_For_Updates
 
 import gc
@@ -51,14 +51,16 @@ class Weather_Station:
         # check for updates
         Check_For_Updates(display=self.display,fetch_only=False).run()
         
-        # connect to the server if we can
+        
         try:
-            settings.wlan = Wifi_Connect()
-            settings.wlan.connect()
+            if not connection.active():
+                self.display.centered_text(
+                    "Waiting for connection", y=50, width=self.display.MAX_Y)
+                connection.connect()
         except:
-            pass
-    
-        self.display.centered_text("Waiting for connection",y=50,width=self.display.MAX_Y)
+            self.display.clear()
+            self.display.centered_text(
+                "Connection Failed", y=50, width=self.display.MAX_Y)
 
         clk = Clock()
         clk.set_time()

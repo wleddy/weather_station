@@ -9,6 +9,7 @@ the Real Time Clock.
 
 from machine import RTC
 from instance.settings import settings
+from wifi_connect import connection
 import time as time
 
 
@@ -31,28 +32,16 @@ class Clock:
 
     
     def _connect(self):
-        if not getattr(settings,"wlan",False):
-            try:
-                from wifi_connect import Wifi_Connect
-                settings.wlan = Wifi_Connect()
-
-            except Exception as e:
-                if settings.debug:
-                    print("settings.wlan not created:",str(e))
-                    
-                return
-                    
-        # a Wifi_Connect instance is avaialble
         try:
-            if not settings.wlan.isconnected():
-                settings.wlan.connect()
-                if not settings.wlan.isconnected():
-                    return
+            if not connection.active():
+                if settings.debug:
+                    print('Connecting')
+                connection.connect()
         except Exception as e:
             if settings.debug:
-                print("Could not activate connection:",str(e))
-                    
-
+                print("Cound not connect to WiFi:", str(e))
+        
+ 
     def set_time(self):
         """Try to access the NTP system to set the real time clock"""
         

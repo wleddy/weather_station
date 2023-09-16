@@ -4,7 +4,7 @@ as needed.
 from instance.settings import settings
 import machine
 from senko import senko
-from wifi_connect import Wifi_Connect
+from wifi_connect import connection
 
 class Check_For_Updates:
     
@@ -16,14 +16,14 @@ class Check_For_Updates:
         
     def run(self):
         """Update any files that need it..."""
-        self.alert('Connecting to the interwebs')
+        
         try:
-            settings.wlan = Wifi_Connect()
-            settings.wlan.connect()
-            if not settings.wlan.is_connected():
-                return
+            if not connection.active():
+                self.alert('Connecting')
+                connection.connect()
         except:
-            return
+            self.alert('Failed to connect')
+            return False
             
         OTA = senko.Senko(
             user="wleddy", repo="weather_station",
