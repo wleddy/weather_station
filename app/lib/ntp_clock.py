@@ -10,6 +10,7 @@ the Real Time Clock.
 from machine import RTC
 from instance.settings import settings
 from wifi_connect import connection
+from start_up.time_functions import Time_Functions
 import time as time
 
 
@@ -17,11 +18,12 @@ class Clock:
     
     def __init__(self,format=12,offset_seconds=None):
         self.format = format #12 or 24 hour display
+        self.time_functions = Time_Functions()
         if offset_seconds:
             self.offset_seconds = offset_seconds # seconds before or after UTC
         else:
             try:
-                self.offset_seconds = 3600 * settings.time_zone_offset
+                self.offset_seconds = 3600 * self.time_functions.time_zone_offset
             except ValueError:
                 self.offset_seconds = -28800
                 # -28800 is 8 hours before UTC (PST
@@ -68,7 +70,7 @@ class Clock:
         """
         
         t = time.time() + self.offset_seconds # returns an int
-        if settings.is_daylight_savings:
+        if self.time_functions.is_daylight_savings:
             t += 3600 # add an hour
             
         t = time.localtime(t) # returns a tuple eg: (Y,M,D,H,m,s,weekday,yearday)
