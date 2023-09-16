@@ -4,9 +4,8 @@ for OTA updates here."""
 import os
 
 def get_ota_file_list():
-    return [
+    return [ 'start_up/ota_files.py', # Always include this one
         'main.py',
-        'start_up/ota_files.py',
         'lib/senko/check_for_updates.py',
         'lib/weather_station/weather_station.py',
         'lib/bmx.py',
