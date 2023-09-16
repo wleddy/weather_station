@@ -1,21 +1,35 @@
 """Run code to check for updates if available and restart
 as needed.
 """
+
 from instance.settings import settings
 import machine
 from senko import senko
+from start_up.ota_files import get_ota_file_list
 from wifi_connect import connection
 
 class Check_For_Updates:
     
     def __init__(self,display=None, fetch_only=False):
         self.display = display # is there a display to use?
-        self.fetch_only = fetch_only # don't actually update any files
+        # set fetch_only True to skip the update operation
+        #   set settings.fetch_only = True in main.py to run tests 
+        #   without actually updating
+        self.fetch_only = getattr(settings,'fetch_only',fetch_only)
         
+        # don't actually run the update process
+        self.defer_update = getattr(settings,'defer_update',False)
+        
+        self.OTA = None
         self.v_pos = -1 # the screen display if used
+        
         
     def run(self):
         """Update any files that need it..."""
+        
+        if self.defer_update:
+            self.alert('Updates Deferred')
+            return False
         
         try:
             if not connection.active():
@@ -25,26 +39,27 @@ class Check_For_Updates:
             self.alert('Failed to connect')
             return False
             
-        OTA = senko.Senko(
-            user="wleddy", repo="weather_station",
+        self.OTA = senko.Senko(
+            user=settings.OTA_info['user'], repo=settings.OTA_info['repo'],
             files=[]
             )
         
         # Seems to fail if I try to check more than 3 files in a block
-        from start_up.ota_files import get_ota_file_list
-        master_list = get_ota_file_list()
+        file_list = get_ota_file_list()
                 
         self.alert("Checking for updates")
+        if self.fetch_only:
+            self.alert('--- Fetch Only ---')
     #     print('file_sets:',file_sets)
         has_changes = False
-        for file in master_list: # a list of lists
-            OTA.files = [file,]
+        for file in file_list: # a list of lists
+            self.OTA.files = [file,]
             self.alert(f'Checking: {file}')
             if self.fetch_only:
-                if OTA.fetch():
+                if self.OTA.fetch():
                     self.alert(f'   --- {file} needs update')
                     has_changes = True
-            elif OTA.update():
+            elif self.OTA.update():
                 has_changes = True
                 self.alert(f'   +++ {file} Updated')
             
@@ -73,6 +88,4 @@ class Check_For_Updates:
             
         else:
             print(msg)
-
-
 
