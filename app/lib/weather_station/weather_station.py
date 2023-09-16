@@ -215,6 +215,13 @@ class Weather_Station:
             if clk.last_sync_seconds < (time.time() - (3600 * 24)):
                 # if it's been longer than 24 hours since last sync update the clock
                 clk.set_time()
+
+            try:
+                # check for updates
+                if Check_For_Updates(display=None, fetch_only=True).run():
+                    Check_For_Updates(display=self.display, fetch_only=False).run()
+            except:
+                pass
                 
             # Sync the display time to the top of the minute
             # then sleep for 1 minute
