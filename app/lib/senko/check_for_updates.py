@@ -48,8 +48,11 @@ class Check_For_Updates:
                 has_changes = True
                 self.alert(f'   +++ {file} Updated')
             
+        self.v_pos = -1 #force screen clear
+
         if has_changes and self.fetch_only:
-                return has_changes
+                self.alert('Updates are needed')
+                return True
         elif has_changes:
             self.alert("Rebooting...")
             machine.reset()
