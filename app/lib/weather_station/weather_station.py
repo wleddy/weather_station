@@ -52,6 +52,7 @@ class Weather_Station:
         self.display.centered_text(
             "Checking for updates...", y=50, width=self.display.MAX_Y)
         Check_For_Updates(display=None,fetch_only=False).run()
+        last_update_check = time.time()
         
         
         try:
@@ -209,15 +210,17 @@ class Weather_Station:
                 # if it's been longer than 24 hours since last sync update the clock
                 clk.set_time()
 
-            try:
-                # check for updates
-                if Check_For_Updates(display=None, fetch_only=True).run():
-                    display.clear()
-                    self.display.centered_text(
-                        "Checking for updates", y=50, width=self.display.MAX_Y)
-                    Check_For_Updates(display=None, fetch_only=False).run()
-            except:
-                pass
+            if last_update_check < time.time() - 3600: # Only check once an hour
+                last_update_check = time.time()
+                try:
+                    # check for updates
+                    if Check_For_Updates(display=None, fetch_only=True).run():
+                        display.clear()
+                        self.display.centered_text(
+                            "Checking for updates", y=50, width=self.display.MAX_Y)
+                        Check_For_Updates(display=None, fetch_only=False).run()
+                except:
+                    pass
                 
             # Sync the display time to the top of the minute
             # then sleep for 1 minute
