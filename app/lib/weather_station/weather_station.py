@@ -199,17 +199,6 @@ class Weather_Station:
             # set the display brightness
             # daylight reading gets greater as it gets darker
             self.daylight = int(self.daylight_sensor.read_u16())
-#             if settings.debug:
-#                 self.display.draw_text(
-#                       0,
-#                       self.display.MAX_Y,
-#                       "Dl: " + str(self.daylight),
-#                       self.display.body_font,
-#                       self.display.WHITE,
-#                       background=0,
-#                       landscape=True,
-#                       spacing=1,
-#                       )
             self.brightness = self.MAX_ADC - int(self.daylight * .25)
             if self.brightness < 20000:
                 self.brightness = 20000
@@ -333,11 +322,11 @@ def get_display():
            
 def export_reading(sensor):
     #Send the current temp to the temp_center app
-    if not settings.wlan.isconnected():
+    if not connection.isconnected():
         print("Trying to connect")
-        settings.wlan.connect()
+        connection.connect()
         time.sleep(2)
-    if settings.wlan.isconnected():
+    if connection.isconnected():
         
         gc.collect()
 
