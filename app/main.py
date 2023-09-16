@@ -15,7 +15,7 @@ from instance.settings import settings
 
 settings.debug = True
 
-## OTA update settings for testing
+# OTA update settings for testing
 # settings.fetch_only = True
 # settings.defer_update = True
 
