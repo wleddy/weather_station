@@ -9,9 +9,9 @@ class Wifi_Connect:
         self.credentials = credentials
         self.access_point = ""
         self.wlan = network.WLAN(network.STA_IF)
-        self.wlan.active(True)
+        self.wlan.active(False)
         self.wlan.disconnect() # may not be needed
-    
+        
     def connect(self):
         print('connecting...')
         # try to use last connection
