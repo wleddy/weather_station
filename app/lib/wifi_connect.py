@@ -178,3 +178,4 @@ class Wifi_Connect:
                 
             return scan
 
+connection = Wifi_Connect() # the connection is not active at this point
