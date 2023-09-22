@@ -95,32 +95,29 @@ def delete_all(path):
     
     """
     
+    out = True
+
     if not path or path[0] != '/': return False
 
     path_list = path.split('/')
 
     if not path_list: return False
     
-    print(path_list)
     path_list.pop(0) # remove the root reference
 
-    out = True
-    
-    # try:
     if not path_list: return out # dont delete the root dir
 
-    current_path = '/' + '/'.join(path_list)
-    print('current path:',current_path)
-    if is_dir(current_path):
-        file_list = os.listdir(current_path)
-        for f in file_list:
-            delete_all(join_path(current_path,f))
-        os.rmdir(current_path)
-        path_list.pop()
-    else:
-        os.remove(current_path)
-        
-    # except Exception as e:
-    #     out = False
+    try:
+        current_path = '/' + '/'.join(path_list)
+        if is_dir(current_path):
+            file_list = os.listdir(current_path)
+            for f in file_list:
+                delete_all(join_path(current_path,f))
+            os.rmdir(current_path)
+            path_list.pop()
+        else:
+            os.remove(current_path)
+    except Exception as e:
+        out = False
        
     return out    
