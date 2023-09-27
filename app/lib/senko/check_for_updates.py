@@ -7,23 +7,37 @@ import machine
 from senko import senko
 from start_up.ota_files import get_ota_file_list
 from wifi_connect import connection
+from file_utils import make_path, delete_all
 
 class Check_For_Updates:
     
-    def __init__(self,display=None, fetch_only=False):
+    def __init__(self,user=None, repo=None, display=None, fetch_only=False):
         self.display = display # is there a display to use?
         # set fetch_only True to skip the update operation
         #   set settings.fetch_only = True in main.py to run tests 
         #   without actually updating
-        self.fetch_only = getattr(settings,'fetch_only',fetch_only)
+        if fetch_only: 
+            self.fetch_only = fetch_only 
+        else: 
+            self.fetch_only = getattr(settings,'fetch_only',False)
         
         # don't actually run the update process
         self.defer_update = getattr(settings,'defer_update',False)
         
-        self.OTA = None
         self.v_pos = -1 # the screen display if used
+        self.changes = [] #paths to updated files
+        self.tmp='/tmp/'
         
-        
+        if not user: user = settings.OTA_info['user']
+        if not repo: repo = settings.OTA_info['repo']
+
+        self.OTA = senko.Senko(
+            user=user, repo=repo,
+            files=[],
+            tmp=self.tmp,
+            )
+ 
+
     def run(self):
         """Update any files that need it..."""
         
@@ -32,27 +46,27 @@ class Check_For_Updates:
             return False
         
         try:
-            if not connection.active():
+            if not connection.is_connected():
                 self.alert('Connecting')
                 connection.connect()
         except:
             self.alert('Failed to connect')
             return False
-            
-        self.OTA = senko.Senko(
-            user=settings.OTA_info['user'], repo=settings.OTA_info['repo'],
-            files=[]
-            )
-        
-        # Seems to fail if I try to check more than 3 files in a block
+                   
         file_list = get_ota_file_list()
                 
         self.alert("Checking for updates")
         if self.fetch_only:
             self.alert('--- Fetch Only ---')
-    #     print('file_sets:',file_sets)
+
         has_changes = False
-        for file in file_list: # a list of lists
+        changes = []
+
+        for file in file_list: 
+            # test one file at a time
+            # each file will be saved to a temporary location
+            # and moved into the final location after all changed
+            # new files have been successully downloaded.
             self.OTA.files = [file,]
             self.alert(f'Checking: {file}')
             if self.fetch_only:
@@ -61,6 +75,7 @@ class Check_For_Updates:
                     has_changes = True
             elif self.OTA.update():
                 has_changes = True
+                changes.append(file)
                 self.alert(f'   +++ {file} Updated')
             
         self.v_pos = -1 #force screen clear
@@ -68,7 +83,26 @@ class Check_For_Updates:
         if has_changes and self.fetch_only:
                 self.alert('Updates are needed')
                 return True
-        elif has_changes:
+        elif has_changes and changes:
+            self.alert('Downloads successful')
+            self.alert('Moving files')
+            for file in changes:
+                # build the path to the new file if needed
+                if make_path(file):
+                    #path should now exist
+                    try:
+                        tmp_file = open(self.tmp + '/' + file, "r")
+                        local_file =  open(file, "w")
+                        local_file.write(tmp_file.read())
+                    except:
+                        self.alert('Move Failed')
+                        print('Unable to move temp file:',file)
+                    finally:
+                        local_file.close()
+                        tmp_file.close()
+
+            # delete_all(self.tmp)
+            self.v_pos = -1 #force screen clear
             self.alert("Rebooting...")
             machine.reset()
         else:

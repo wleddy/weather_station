@@ -1,12 +1,19 @@
 import urequests
 import uhashlib
 import gc
+from file_utils import make_path
 
 class Senko:
     raw = "https://raw.githubusercontent.com"
     github = "https://github.com"
 
-    def __init__(self, user, repo, url=None, branch="master", working_dir="app", files=["boot.py", "main.py"], headers={}):
+    def __init__(self, user, repo, 
+                 url=None, branch="master", 
+                 working_dir="app", 
+                 files=["boot.py", "main.py"], 
+                 headers={},
+                 tmp='/tmp/',
+                 ):
         """Senko OTA agent class.
 
         Args:
@@ -17,11 +24,13 @@ class Senko:
             url (str): URL to root directory.
             files (list): Files included in OTA update.
             headers (list, optional): Headers for urequests.
+            tmp (str): Start of path to temporary file storage location
         """
         self.base_url = "{}/{}/{}".format(self.raw, user, repo) if user else url.replace(self.github, self.raw)
         self.url = url if url is not None else "{}/{}/{}".format(self.base_url, branch, working_dir)
         self.headers = headers
         self.files = files
+        self.tmp = tmp
 
     def _check_hash(self, x, y):        
         x_hash = uhashlib.sha1(x.encode())
@@ -53,11 +62,16 @@ class Senko:
 
     def _check_all(self):
         changes = []
-
+        
         for file in self.files:
             gc.enable()
             gc.collect()
-            latest_version = self._get_file(self.url + "/" + file)
+            try:
+                latest_version = self._get_file(self.url + "/" + file)
+            except Exception as e:
+                print('failed to get file from github')
+                return False
+            
             if latest_version is None:
                 continue
 
@@ -67,7 +81,8 @@ class Senko:
             except:
                 local_version = ""
                 
-            if not self._check_hash(latest_version, local_version):
+            if local_version and latest_version and \
+                not self._check_hash(latest_version, local_version):
                 changes.append(file)
 
         return changes
@@ -88,14 +103,34 @@ class Senko:
 
         Returns:
             True - if changes were made, False - if not.
+        
+        Initally save files to a temporary dir and move them if
+        all downloads are successfull.
         """
+        
         changes = self._check_all()
-
+        
         for file in changes:
-            with open(file, "w") as local_file:
-                local_file.write(self._get_file(self.url + "/" + file))
+            # build the path to the new file if needed
+            if make_path(self.tmp + file):
+                #path should now exist
+                try:
+                    local_file =  open(self.tmp + '/' + file, "w")
+                    local_file.write(self._get_file(self.url + "/" + file))
+                except:
+                    # unable to write tmp file
+                    changes = []
+                    print('Unable to save temp file:',file)
+                finally:
+                    local_file.close()
+
+            else:
+                # Not able to update one of the files, so give up
+                changes = [] # will return False
+                break
+                
 
         if changes:
-            return True
+             return True
         else:
             return False
