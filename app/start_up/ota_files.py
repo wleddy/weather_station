@@ -14,4 +14,5 @@ def get_ota_file_list():
         'lib/ntp_clock.py',
         'lib/web_client.py',
         'lib/wifi_connect.py',
+        'lib/file_utils.py',
         ]
