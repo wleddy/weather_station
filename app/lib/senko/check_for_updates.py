@@ -101,7 +101,7 @@ class Check_For_Updates:
                         local_file.close()
                         tmp_file.close()
 
-            # delete_all(self.tmp)
+            delete_all(self.tmp)
             self.v_pos = -1 #force screen clear
             self.alert("Rebooting...")
             machine.reset()
