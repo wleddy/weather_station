@@ -31,9 +31,15 @@ class Check_For_Updates:
         if not user: user = settings.OTA_info['user']
         if not repo: repo = settings.OTA_info['repo']
 
+        branch = 'master'
+        b = getattr(settings,'OTA_info',{})
+        if 'branch' in b:
+            branch = b['branch']
+            
         self.OTA = senko.Senko(
             user=user, repo=repo,
             files=[],
+            branch=branch
             )
         self.OTA.tmp = self.tmp
  

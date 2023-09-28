@@ -14,7 +14,8 @@ from weather_station.weather_station import Weather_Station
 from instance.settings import settings
 
 settings.debug = True
-# settings.temp_center_url = 'http://10.0.1.4:5000/api/add_reading'
+settings.temp_center_url = 'http://10.0.1.4:5000/api/add_reading'
+settings.OTA_info.update({'branch':'staging'})
 # OTA update settings for testing
 # settings.fetch_only = True
 # settings.defer_update = True
