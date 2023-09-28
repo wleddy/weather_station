@@ -7,7 +7,7 @@ import machine
 from senko import senko
 from start_up.ota_files import get_ota_file_list
 from wifi_connect import connection
-from file_utils import make_path, delete_all
+from file_utils import make_path, delete_all, join_path
 
 class Check_For_Updates:
     
@@ -93,11 +93,12 @@ class Check_For_Updates:
             self.alert('Downloads successful')
             self.alert('Moving files')
             for file in changes:
+                file = join_path('/',file) # must start with a slash
                 # build the path to the new file if needed
                 if make_path(file):
                     #path should now exist
                     try:
-                        tmp_file = open(self.tmp + '/' + file, "r")
+                        tmp_file = open(self.tmp + file, "r")
                         local_file =  open(file, "w")
                         local_file.write(tmp_file.read())
                     except:
@@ -106,6 +107,8 @@ class Check_For_Updates:
                     finally:
                         local_file.close()
                         tmp_file.close()
+                else:
+                    print('Unable to move file',file)
 
             delete_all(self.tmp)
             self.v_pos = -1 #force screen clear

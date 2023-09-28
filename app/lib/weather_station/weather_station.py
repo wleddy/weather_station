@@ -216,12 +216,12 @@ class Weather_Station:
                 try:
                     # check for updates
                     if Check_For_Updates(display=None, fetch_only=True).run():
-                        display.clear()
+                        self.display.clear()
                         self.display.centered_text(
                             "Checking for updates", y=50, width=self.display.MAX_Y)
                         Check_For_Updates(display=None, fetch_only=False).run()
-                except:
-                    pass
+                except Exception as e:
+                    print("Error during update attempt:",str(e))
                 
             # Sync the display time to the top of the minute
             # then sleep for 1 minute

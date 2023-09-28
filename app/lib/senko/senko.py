@@ -69,7 +69,7 @@ class Senko:
             try:
                 latest_version = self._get_file(self.url + "/" + file)
             except Exception as e:
-                print('failed to get file from github')
+                print('failed to get file from github:',str(e))
                 return False
             
             if latest_version is None:
@@ -117,10 +117,11 @@ class Senko:
                 try:
                     local_file =  open(self.tmp + '/' + file, "w")
                     local_file.write(self._get_file(self.url + "/" + file))
-                except:
+                except Exception as e:
                     # unable to write tmp file
                     changes = []
                     print('Unable to save temp file:',file)
+                    print('Error:',str(e))
                 finally:
                     local_file.close()
 
