@@ -34,8 +34,8 @@ class Check_For_Updates:
         self.OTA = senko.Senko(
             user=user, repo=repo,
             files=[],
-            tmp=self.tmp,
             )
+        self.OTA.tmp = self.tmp
  
 
     def run(self):
