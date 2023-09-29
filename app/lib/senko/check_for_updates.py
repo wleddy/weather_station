@@ -39,7 +39,7 @@ class Check_For_Updates:
         self.OTA = senko.Senko(
             user=user, repo=repo,
             files=[],
-            branch=branch
+            branch=branch,
             )
         self.OTA.tmp = self.tmp
  
