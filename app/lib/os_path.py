@@ -1,19 +1,20 @@
+"""A subset of the os.path functions from python that are laking in micropython"""
+
 import os
 
-def make_path(filespec):
+def make_path(*args):
     """
-    Test the filespec path and if not found, create the path
-    but not the file if a file name is included in the path.
-    Returns True if either the path already existed or was
+    Attempt to create a path made up of the elements in args.
+    if the last arg does not end in a slash an empty file will be
     created.
     
-    The filespec must always begin with a / and describe the
+    The the first argument must always begin with a / and describe the
     full path to be created.
     
-    If the filespec does not end in a / the last element is assumed
-    to be the file name and it is discarded.
-    
     """
+    
+    filespec = join(*args)
+    filename = ''
     
     # for this simple version, alway start from root
     if not filespec or not filespec[0] == '/':
@@ -29,7 +30,7 @@ def make_path(filespec):
         path_list[0] = '/'
         
     if path_list and not path_list[-1].endswith('/'):
-        path_list.pop() # remove the file name element
+        filename = path_list.pop() # save the file name element
         
     current_path= path_list[0]
     try:
@@ -38,19 +39,26 @@ def make_path(filespec):
             if d != '/' and not d in os.listdir():
                 os.mkdir(d)
                 
-            current_path = join_path(current_path,d)
+            current_path = join(current_path,d)
     except Exception as e:
         print(f'Unable to create path: {current_path}',str(e))
         out = False
+        
+    if filename:
+        f = open(join(current_path,filename),'a')
+        f.close()
     
     os.chdir(save_dir) # restore the working dir
     return out
 
 
-def join_path(base,add):
+def join(*args):
     """Roughly replicate python os.path.join"""
     
-    out = (base + '/' + add).replace('//','/')
+    arg_list = [x.strip() for x in args]
+    out = ''
+
+    out = '/'.join(arg_list).replace('//','/')
         
     return out
 
@@ -82,6 +90,14 @@ direcory and it is a directory itself.
     return False
 
 
+def exists(node):
+    try:
+        with open(node,'r') as f:
+            return True
+    except OSError:
+        return False
+    
+
 def delete_all(path):
     """Delete all nodes in the last element of the path.
     if the last element in the path is a directory
@@ -112,7 +128,7 @@ def delete_all(path):
         if is_dir(current_path):
             file_list = os.listdir(current_path)
             for f in file_list:
-                delete_all(join_path(current_path,f))
+                delete_all(join(current_path,f))
             os.rmdir(current_path)
             path_list.pop()
         else:
