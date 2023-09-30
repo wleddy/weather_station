@@ -13,6 +13,8 @@ class Wifi_Connect:
         self.wlan.disconnect() # may not be needed
         
     def connect(self):
+        if self.isconnected():
+            return
         print('connecting...')
         self.wlan.active(True)
         # try to use last connection
