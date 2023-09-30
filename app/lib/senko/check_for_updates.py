@@ -40,6 +40,7 @@ class Check_For_Updates:
             user=user, repo=repo,
             files=[],
             branch=branch,
+            url='http://10.0.1.4:5000/api/get_file',
             )
         self.OTA.tmp = self.tmp
  
@@ -62,6 +63,7 @@ class Check_For_Updates:
         file_list = get_ota_file_list()
                 
         self.alert("Checking for updates")
+        self.alert(f'Server: {self.OTA.url}')
         if self.fetch_only:
             self.alert('--- Fetch Only ---')
 
