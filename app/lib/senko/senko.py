@@ -11,7 +11,7 @@ class Senko:
                  url=None, branch="master", 
                  working_dir="app", 
                  files=["boot.py", "main.py"], 
-                 headers={},
+                 headers={'cache-control':'no-cache'},
                  tmp='/tmp/',
                  ):
         """Senko OTA agent class.
@@ -51,14 +51,14 @@ class Senko:
         try:
             payload = urequests.get(url, headers=self.headers)
             code = payload.status_code
+            if code == 200:
+                return payload.text
+            else:
+                return None
         except Exception as e:
             print('Error getting file:',str(e))
             return None
         
-        if code == 200:
-            return payload.text
-        else:
-            return None
 
     def _check_all(self):
         changes = []
