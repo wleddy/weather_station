@@ -20,7 +20,7 @@ from display import glyph_metrics
 from ntp_clock import Clock
 from web_client import get
 from wifi_connect import connection
-from senko.check_for_updates import Check_For_Updates
+from ota_update.check_for_updates import Check_For_Updates
 
 import gc
 gc.enable()
@@ -336,7 +336,7 @@ def export_reading(sensor):
 
         try:
             r = get("{url}/{sensor_id}/{temp}/{raw_temp}/{scale}/".format(
-                        url = settings.reading_export_url,
+                        url = settings.temp_center_url,
                         sensor_id=sensor.sensor_id,
                         temp=sensor.adjusted_temperature,
                         raw_temp = sensor.saved_temp,
