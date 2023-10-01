@@ -71,7 +71,7 @@ class Wifi_Connect:
         out = {}
         
         try:
-            with open('/instance/last_ssid.txt',mode) as f:
+            with open('/settings/last_ssid.txt',mode) as f:
                 if ssid:
                     out = {ssid:pw}
                     f.write(json.dumps(out))
