@@ -28,9 +28,8 @@ class Check_For_Updates:
 
     def run(self):
         """Update any files that need it..."""
-        try:
-            connection.connect()
-        except:
+        connection.connect()
+        if not connection.is_connected():
             self.alert('Failed to connect')
             return False
                    

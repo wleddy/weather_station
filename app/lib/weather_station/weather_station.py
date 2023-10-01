@@ -51,16 +51,15 @@ class Weather_Station:
         last_update_check = time.time()
         
 
-        try:
-            if not connection.isconnected():
-                self.display.centered_text(
-                    "Waiting for connection", y=50, width=self.display.MAX_Y)
-                connection.connect()
-        # check for updates
+        self.display.centered_text(
+            "Waiting for connection", y=50, width=self.display.MAX_Y)
+        connection.connect()
+        if connection.is_connected():
+            # check for updates
             self.display.centered_text(
                 "Checking for updates...", y=50, width=self.display.MAX_Y)
             Check_For_Updates(display=None,fetch_only=False).run()
-        except:
+        else:
             self.display.clear()
             self.display.centered_text(
                 "Connection Failed", y=50, width=self.display.MAX_Y)

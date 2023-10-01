@@ -31,17 +31,6 @@ class Clock:
         self.has_time = False
         self.UTC_time = None
         self.last_sync_seconds = time.time()
-
-    
-    def _connect(self):
-        try:
-            if not connection.active():
-                if settings.debug:
-                    print('Connecting')
-                connection.connect()
-        except Exception as e:
-            if settings.debug:
-                print("Cound not connect to WiFi:", str(e))
         
  
     def set_time(self):
@@ -51,18 +40,18 @@ class Clock:
         # update to the current time just to show we tried...
         self.last_sync_seconds = time.time() 
    
-        self._connect()
-        
-        try:
-            import ntptime
-            ntptime.settime() # always UTC
-            self.UTC_time = time.gmtime()
-            print("ntptime:",time.localtime())
-            self.has_time = True
-            self.set_RTC()
-            self.last_sync_seconds = time.time()
-        except Exception as e:
-            print("unable to connect to time server:",str(e))
+        connection.connect()
+        if connection.is_connected():
+            try:
+                import ntptime
+                ntptime.settime() # always UTC
+                self.UTC_time = time.gmtime()
+                print("ntptime:",time.localtime())
+                self.has_time = True
+                self.set_RTC()
+                self.last_sync_seconds = time.time()
+            except Exception as e:
+                print("unable to connect to time server:",str(e))
                     
  
     def set_RTC(self):
