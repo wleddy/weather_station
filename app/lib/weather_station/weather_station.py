@@ -13,12 +13,11 @@
 from machine import Pin, SPI, PWM, ADC, RTC
 from settings.settings import settings
 import time
-
+import urequests
 from bmx import BMX
 from display.display import Display, Button
 from display import glyph_metrics
 from ntp_clock import Clock
-from web_client import get
 from wifi_connect import connection
 from ota_update.check_for_updates import Check_For_Updates
 
@@ -331,7 +330,7 @@ def export_reading(sensor):
         gc.collect()
 
         try:
-            r = get("{url}/{sensor_id}/{temp}/{raw_temp}/{scale}/".format(
+            r = urequests.get("{url}/{sensor_id}/{temp}/{raw_temp}/{scale}/".format(
                         url = settings.reading_export_url,
                         sensor_id=sensor.sensor_id,
                         temp=sensor.adjusted_temperature,
