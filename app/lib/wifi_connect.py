@@ -5,7 +5,7 @@ import json
 
 class Wifi_Connect:
     
-    def __init__(self,credentials="instance/credentials.conf"):
+    def __init__(self,credentials="settings/credentials.conf"):
         self.credentials = credentials
         self.access_point = ""
         self.wlan = network.WLAN(network.STA_IF)
