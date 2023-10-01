@@ -46,7 +46,7 @@ class Settings:
 		if self.testing:
 			return 'http://10.0.1.4:5000'
 		else:
-			return 'https://tc.williesworkshop.net'
+			return 'http://tc.williesworkshop.net'
 
 
 	@property	
