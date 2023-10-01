@@ -10,7 +10,7 @@
 """
 
 
-from instance.settings import settings
+from settings.settings import settings
 settings.debug = True
 
 from weather_station.weather_station import Weather_Station

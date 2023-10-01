@@ -4,7 +4,7 @@ sensor
 """
 
 from bmx280_bl import BMX280
-from instance.settings import settings
+from settings.settings import settings
 
 class BMX:
     

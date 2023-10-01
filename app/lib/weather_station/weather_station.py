@@ -11,7 +11,7 @@
 """
 
 from machine import Pin, SPI, PWM, ADC, RTC
-from instance.settings import settings
+from settings.settings import settings
 import time
 
 from bmx import BMX
@@ -215,11 +215,7 @@ class Weather_Station:
                 last_update_check = time.time()
                 try:
                     # check for updates
-                    if Check_For_Updates(display=None, fetch_only=True).run():
-                        self.display.clear()
-                        self.display.centered_text(
-                            "Checking for updates", y=50, width=self.display.MAX_Y)
-                        Check_For_Updates(display=None, fetch_only=False).run()
+                    Check_For_Updates(display=None, fetch_only=False).run()
                 except Exception as e:
                     print("Error during update attempt:",str(e))
                 

@@ -11,10 +11,10 @@
 
 
 from weather_station.weather_station import Weather_Station
-from instance.settings import settings
+from settings.settings import settings
 
 settings.debug = True
-settings.testing = True #Use the testing host
+# settings.testing = True #Use the testing host
 # OTA update settings for testing
 # settings.fetch_only = True
 # settings.defer_update = True

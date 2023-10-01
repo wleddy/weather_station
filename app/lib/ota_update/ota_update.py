@@ -2,7 +2,7 @@ import urequests
 import uhashlib
 import gc
 from os_path import make_path, exists, join
-from instance.settings import settings
+from settings.settings import settings
 
 class OTA_Update:
     """Check for updates to the micropython app in the specified.

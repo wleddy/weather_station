@@ -2,10 +2,10 @@
 as needed.
 """
 
-from instance.settings import settings
+from settings.settings import settings
 import machine
 from ota_update.ota_update import OTA_Update
-from start_up.ota_files import get_ota_file_list
+from settings.ota_files import get_ota_file_list
 from wifi_connect import connection
 from os_path import make_path, delete_all, join
 
@@ -57,33 +57,33 @@ class Check_For_Updates:
         if self.fetch_only:
             return True
                 
-        self.alert('Downloads successful')
-        self.alert('Moving files')
-        for file in updates:
-            # build the path to the new file if needed
-            file = join('/',file)
-            if make_path(file):
-                #path should now exist
-                    print(f'file: {file} being moved')
-#                     try:
+        if updates:
+            self.alert('Downloads successful')
+            self.alert('Moving files')
+            for file in updates:
+                # build the path to the new file if needed
+                file = join('/',file)
+                if make_path(file):
+                    #path should now exist
+                    self.alert(f'file: {file} being moved')
                     tmp_file = open(join(self.tmp,file), "r")
                     local_file =  open(file, "w")
                     local_file.write(tmp_file.read())
-#                     except:
-                    # self.alert('Move Failed')
-                    # print('Unable to move temp file:',file)
-#                     finally:
+
                     local_file.close()
                     tmp_file.close()
-            else:
-                self.alert('No update needed')
-                return False
-
+                else:
+                    self.alert(f'Could not make path for {file}')
+                    return False
+                    
             delete_all(self.tmp)
             self.v_pos = -1 #force screen clear
             self.alert("Rebooting...")
             machine.reset()
-                
+            
+        else:
+            self.alert('No update needed')
+            return False                
 
     def alert(self,msg):
         type_height = 20 # just to keep it simple
