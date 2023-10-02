@@ -46,35 +46,41 @@ class Weather_Station:
         self.display = get_display()
         
     def start(self):
-        
+        """Run the weather station display loop"""
         
         last_update_check = time.time()
         
-
         self.display.centered_text(
             "Waiting for connection", y=50, width=self.display.MAX_Y)
-        connection.connect()
-        if connection.is_connected():
-            # check for updates
-            self.display.centered_text(
-                "Checking for updates...", y=50, width=self.display.MAX_Y)
-            Check_For_Updates(display=None,fetch_only=False).run()
-        else:
-            self.display.clear()
-            self.display.centered_text(
-                "Connection Failed", y=50, width=self.display.MAX_Y)
-
+            
         clk = Clock()
         clk.set_time()
         if clk.has_time:
+            # have wifi connection now...
             mes = "Got time: " + clk.time_string()
             print(mes)
         else:
             mes = "Don't have time"
             print(mes)
+            self.display.clear()
+            self.display.centered_text(
+                "Connection Failed", y=75, width=self.display.MAX_Y
+                )
+            time.sleep(2)
             
-        self.display.centered_text(mes,y=75,width=self.display.MAX_Y)
-
+            
+        self.display.clear()
+        self.display.centered_text(mes,y=50,width=self.display.MAX_Y)
+            
+        if connection.is_connected():
+            # check for updates
+            self.display.centered_text(
+                "Checking for updates...", y=75, width=self.display.MAX_Y)
+            try:
+                Check_For_Updates(display=None,fetch_only=False).run()
+            except Exception as e:
+                print('Initial update attempt failed:',str(e))
+                
         time.sleep(2)
         self.display.clear()
 
@@ -131,8 +137,9 @@ class Weather_Station:
                 style = "time"
             else:
                 style = "no time"
-        
+                
             force_refresh = False
+            
             if style != prev_style:
                 prev_style = style
                 force_refresh = True
@@ -174,6 +181,7 @@ class Weather_Station:
                 
             display_rows = self.display_coords[-2:] #only interested in the last two elements for temperatures
             row = 0
+            changed_sensors = []
             for sensor in sensors:
                 try:
                     if sensor.temp_changed() or force_refresh:
@@ -184,7 +192,7 @@ class Weather_Station:
                             print(sensor.name,"Corrected:",sensor.adjusted_temperature)
 #                             settings.debug = True
                             
-                        export_reading(sensor)
+                        changed_sensors.append(sensor)
                             
                     elif settings.debug:
                         print("No Temp change for sensor",sensor.name)
@@ -204,6 +212,13 @@ class Weather_Station:
                 self.brightness = 20000
 
             self.led.duty_u16(self.brightness)
+            
+            # Export changed readings
+            for sensor in changed_sensors:
+                try:
+                    export_reading(sensor)
+                except Exception as e:
+                    print(f'Sensor {sensor.name} export failed',str(e))
             
             if clk.last_sync_seconds < (time.time() - (3600 * 24)):
                 # if it's been longer than 24 hours since last sync update the clock
