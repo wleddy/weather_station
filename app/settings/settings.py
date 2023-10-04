@@ -1,8 +1,10 @@
 # System setting
 
-from machine import Pin, SPI
+from machine import Pin, SPI, SoftSPI
 from settings.calibration_data import calibration_data
 import time
+from logging import logging as log
+import os
 
 class Settings:
     def __init__(self,debug=False):
@@ -63,7 +65,9 @@ class Settings:
         #URL for reporting results
         dest = '/api/add_reading'
         return f'{self.host}{dest}'
-    
 
-        
+
 settings = Settings()
+
+log.basicConfig(level=log.DEBUG,filename='/log.log')
+

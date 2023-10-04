@@ -11,7 +11,7 @@
 """
 
 from machine import Pin, SPI, PWM, ADC, RTC
-from settings.settings import settings
+from settings.settings import settings, log
 import time
 import urequests
 from bmx import BMX
@@ -58,10 +58,10 @@ class Weather_Station:
         if clk.has_time:
             # have wifi connection now...
             mes = "Got time: " + clk.time_string()
-            print(mes)
+            log.info(mes)
         else:
             mes = "Don't have time"
-            print(mes)
+            log.info(mes)
             self.display.clear()
             self.display.centered_text(
                 "Connection Failed", y=75, width=self.display.MAX_Y
@@ -79,7 +79,7 @@ class Weather_Station:
             try:
                 Check_For_Updates(display=None,fetch_only=False).run()
             except Exception as e:
-                print('Initial update attempt failed:',str(e))
+                log.info(f'Initial update attempt failed: {str(e)}')
                 
         time.sleep(2)
         self.display.clear()
@@ -99,9 +99,8 @@ class Weather_Station:
                             )
                         )
         except Exception as e:
-            print(e)
-            mes = "Outdoor sensor Failed"
-            print(mes,str(e))
+            mes = f"Outdoor sensor Failed"
+            log.exception(e,f'{mes}, {str(e)}')
             self.display.centered_text(mes,y=25,width=self.display.MAX_Y)
         
         try:
@@ -116,9 +115,8 @@ class Weather_Station:
                             )
                         )
         except Exception as e:
-            print(e)
-            mes = "Indoor sensor Failed"
-            print(mes,str(e))
+            mes = f"Indoor sensor Failed"
+            log.exception(e,f'{mes}, {str(e)}')
             self.display.centered_text(mes,y=50,width=self.display.MAX_Y)
         
         if len(sensors) < 2:
@@ -186,20 +184,17 @@ class Weather_Station:
                 try:
                     if sensor.temp_changed() or force_refresh:
                         self.display_temp(sensor,display_rows[row],glyphs)
-                        if settings.debug:
-                            print(sensor.name,":",sensor.saved_temp)
-#                             settings.debug = False #turn off to avoid double debug messages
-                            print(sensor.name,"Corrected:",sensor.adjusted_temperature)
-#                             settings.debug = True
-                            
+                        log.info(f"{sensor.name}: {sensor.saved_temp}")
+                        log.debug(f"{sensor.name}, Corrected: {sensor.adjusted_temperature}")
+                        
                         changed_sensors.append(sensor)
                             
-                    elif settings.debug:
-                        print("No Temp change for sensor",sensor.name)
+                    else:
+                        log.debug(f"No Temp change for sensor {sensor.name}")
 
 
                 except Exception as e:
-                    print("Sensor Error for {}: ".format(sensor.name),str(e))
+                    log.error("Sensor Error for {}: {}".format(sensor.name,str(e)))
                     self.display_temp(sensor,display_rows[row],glyphs)
                     
                 row +=1
@@ -218,7 +213,7 @@ class Weather_Station:
                 try:
                     export_reading(sensor)
                 except Exception as e:
-                    print(f'Sensor {sensor.name} export failed',str(e))
+                    log.info(f'Sensor {sensor.name} export failed, {str(e)}')
             
             if clk.last_sync_seconds < (time.time() - (3600 * 24)):
                 # if it's been longer than 24 hours since last sync update the clock
@@ -230,7 +225,7 @@ class Weather_Station:
                     # check for updates
                     Check_For_Updates(display=None, fetch_only=False).run()
                 except Exception as e:
-                    print("Error during update attempt:",str(e))
+                    log.info(f"Error during update attempt: {str(e)}")
                 
             # Sync the display time to the top of the minute
             # then sleep for 1 minute
@@ -254,7 +249,7 @@ class Weather_Station:
 #                     raw_temp = "R: {:.1f}".format(sensor.saved_temp)
 #                     calibration_factor = "C: {:.2f}".format(sensor.calibration_factor)
             except Exception as e:
-                print(str(e))
+                log.error(f'Error adjusting temperature: {str(e)}')
                 temp = "--?"
 
         # clear the row
@@ -336,7 +331,7 @@ def get_display():
 def export_reading(sensor):
     #Send the current temp to the temp_center app
     if not connection.isconnected():
-        print("Trying to connect")
+        log.debug("Trying to connect for reading export")
         connection.connect()
         time.sleep(2)
     if connection.isconnected():
@@ -352,20 +347,17 @@ def export_reading(sensor):
                         scale=sensor.temp_scale,
                         )
                     )
-            if settings.debug:
-                print("Get response:",r.text)
+
+            log.debug(f"Got response: {r.text}")
             del r
             gc.collect()
             
         except Exception as e:
-            print("Export Reading Failed for",sensor.name,":",str(e))
+            log.exception(e,f"Export Reading Failed for {sensor.name}: {str(e)}")
             gc.enable()
-            print("Alocated Memory:",gc.mem_alloc())
-            print("Avaliable Memory:",gc.mem_free())
             gc.collect()
-            print("Now Available Mem.:",gc.mem_free())
             
-    elif settings.debug:
-        print("Not Connected")
+    else:
+        log.info("Not Connected")
 
         

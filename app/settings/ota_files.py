@@ -15,7 +15,7 @@ def get_ota_file_list():
         'lib/weather_station/weather_station.py',
         'lib/bmx.py',
         'lib/ntp_clock.py',
-        'lib/web_client.py',
         'lib/wifi_connect.py',
         'lib/os_path.py',
+        'lib/logging/logging.py',
         ]
