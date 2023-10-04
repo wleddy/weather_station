@@ -53,6 +53,11 @@ class Logger:
             else:
                 with open(_filename, "a") as fp:
                     fp.write(log_str)
+                # Allways print out the log message when in settings.debug
+                from settings.settings import settings
+                if settings.debug:
+                    print(message)
+
 
         except Exception as e:
             print("--- Logging Error ---")
@@ -81,14 +86,17 @@ class Logger:
         self.log(CRITICAL, message, *args)
 
     def exception(self, exception, message, *args):
+        # if seetings is debug and there is a file, print the message
+        from settings.settings import settings
         self.log(ERROR, message, *args)
 
-        if _filename is None:
+        if _filename is None or settings.debug:
             sys.print_exception(exception, _stream)
-        else:
+            
+        if not _filename is None:
             with open(_filename, "a") as fp:
                 sys.print_exception(exception, fp)
-
+                
 
 def getLogger(name="root"):
     if name not in _loggers:
@@ -114,10 +122,6 @@ def setLevel(level):
 
 def debug(message, *args):
     getLogger().debug(message, *args)
-    # if seetings is debug and there is a file, print the message
-    from settings.settings import settings
-    if settings.debug and _filename:
-        print(message)
 
 
 def info(message, *args):
