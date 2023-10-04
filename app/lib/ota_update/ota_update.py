@@ -2,7 +2,9 @@ import urequests
 import uhashlib
 import gc
 from os_path import make_path, exists, join
-from settings.settings import settings
+from settings.settings import settings, log
+
+gc.enable()
 
 class OTA_Update:
     """Check for updates to the micropython app in the specified.
@@ -55,6 +57,8 @@ class OTA_Update:
 
 
     def _get_file(self, url):
+        log.info(f'Downloading {url}')
+        gc.collect()
         payload = urequests.get(url, headers=self.headers)
         code = payload.status_code
         if code == 200:
@@ -78,8 +82,8 @@ class OTA_Update:
         self.changes = []
         
         for file in self.files:
-            gc.collect()
             latest_version = self._get_file(self.url + "/" + file)
+            gc.collect()
             
             if latest_version is None:
                 # a file does not exist on the server.
@@ -88,6 +92,7 @@ class OTA_Update:
             
             local_version = None
             if exists(file):
+                log.info(f'Reading in {file}')
                 with open(file, "r") as local_file:
                     local_version = local_file.read()
                 

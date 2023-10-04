@@ -2,7 +2,7 @@
 as needed.
 """
 
-from settings.settings import settings
+from settings.settings import settings, log
 import machine
 from ota_update.ota_update import OTA_Update
 from settings.ota_files import get_ota_file_list
@@ -30,15 +30,15 @@ class Check_For_Updates:
         """Update any files that need it..."""
         connection.connect()
         if not connection.is_connected():
-            self.alert('Failed to connect')
+            log.info('Failed to connect')
             return False
                    
         self.file_list = get_ota_file_list()
                 
-        self.alert("Checking for updates")
-        self.alert(f'URL : {settings.ota_source_url}')
+        log.info("Checking for updates")
+        log.info(f'URL : {settings.ota_source_url}')
         if self.fetch_only:
-            self.alert('--- Fetch Only ---')
+            log.info('--- Fetch Only ---')
         
         delete_all(self.tmp)
         ota = OTA_Update()
@@ -49,22 +49,22 @@ class Check_For_Updates:
                 if not ota.changes:
                     continue
                 updates.append(file)
-                self.alert(f'  +++ /{file} needs update')
+                log.info(f'  +++ /{file} needs update')
                     
-        self.alert('{} files ready to update'.format(len(updates)))
+        log.info('{} files ready to update'.format(len(updates)))
                     
         if self.fetch_only:
             return True
                 
         if updates:
-            self.alert('Downloads successful')
-            self.alert('Moving files')
+            log.info('Downloads successful')
+            log.info('Moving files')
             for file in updates:
                 # build the path to the new file if needed
                 file = join('/',file)
                 if make_path(file):
                     #path should now exist
-                    self.alert(f'file: {file} being moved')
+                    log.info(f'file: {file} being moved')
                     tmp_file = open(join(self.tmp,file), "r")
                     local_file =  open(file, "w")
                     local_file.write(tmp_file.read())
@@ -72,28 +72,15 @@ class Check_For_Updates:
                     local_file.close()
                     tmp_file.close()
                 else:
-                    self.alert(f'Could not make path for {file}')
+                    log.info(f'Could not make path for {file}')
                     return False
                     
             delete_all(self.tmp)
             self.v_pos = -1 #force screen clear
-            self.alert("Rebooting...")
+            log.info("Rebooting...")
             machine.reset()
             
         else:
-            self.alert('No update needed')
+            log.info('No update needed')
             return False                
-
-    def alert(self,msg):
-        type_height = 20 # just to keep it simple
-        if self.display:
-            if self.v_pos < 0 or self.v_pos + type_height > self.display.MAX_X:
-                self.display.clear()
-                self.v_pos = 0
-            
-            self.v_pos += type_height
-            self.display.centered_text(msg[-25:],y=self.v_pos,width=self.display.MAX_Y)
-            
-        else:
-            print(msg)
 
