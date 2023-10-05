@@ -79,7 +79,7 @@ class Weather_Station:
             try:
                 Check_For_Updates(display=None,fetch_only=False).run()
             except Exception as e:
-                log.info(f'Initial update attempt failed: {str(e)}')
+                log.exception(e,f'Initial update attempt failed: {str(e)}')
                 
         time.sleep(2)
         self.display.clear()
@@ -225,7 +225,7 @@ class Weather_Station:
                     # check for updates
                     Check_For_Updates(display=None, fetch_only=False).run()
                 except Exception as e:
-                    log.info(f"Error during update attempt: {str(e)}")
+                    log.exception(e,f"Error during update attempt: {str(e)}")
                 
             # Sync the display time to the top of the minute
             # then sleep for 1 minute
