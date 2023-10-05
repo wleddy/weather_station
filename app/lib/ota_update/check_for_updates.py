@@ -41,25 +41,18 @@ class Check_For_Updates:
             log.info('--- Fetch Only ---')
         
         delete_all(self.tmp)
-        ota = OTA_Update()
-        updates = []
-        for file in self.file_list:
-            ota.files=[file]
-            if ota.update():
-                if not ota.changes:
-                    continue
-                updates.append(file)
-                log.info(f'  +++ /{file} needs update')
+        ota = OTA_Update(files=self.file_list,tmp=self.tmp)
+        ota.update()
                     
-        log.info('{} files ready to update'.format(len(updates)))
-                    
+        log.info('{} files ready to update'.format(len(ota.changes)))
+        log.info('Updating: {}'.format(', '.join(ota.changes)))
+        
         if self.fetch_only:
             return True
                 
-        if updates:
-            log.info('Downloads successful')
+        if ota.changes:
             log.info('Moving files')
-            for file in updates:
+            for file in ota.changes:
                 # build the path to the new file if needed
                 file = join('/',file)
                 if make_path(file):
@@ -74,8 +67,9 @@ class Check_For_Updates:
                 else:
                     log.info(f'Could not make path for {file}')
                     return False
-                    
-            delete_all(self.tmp)
+            
+            if not settings.debug:
+                delete_all(self.tmp)
             self.v_pos = -1 #force screen clear
             log.info("Rebooting...")
             machine.reset()
