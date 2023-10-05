@@ -57,10 +57,11 @@ class OTA_Update:
 
 
     def _get_file(self, url):
-        log.info(f'Downloading {url}')
+        log.debug(f'_get_file {url}')
         gc.collect()
         payload = urequests.get(url, headers=self.headers)
         code = payload.status_code
+        log.debug(f'_get_file status code: {code}')
         if code == 200:
             return payload.text
         else:
@@ -88,28 +89,48 @@ class OTA_Update:
             if latest_version is None:
                 # a file does not exist on the server.
                 # we may want to delete the local version
+                log.info(f'Update: file {file} not found on server')
                 continue
             
             local_version = None
             if exists(file):
-                log.info(f'Reading in {file}')
+                log.info(f'Update reading in {file}')
                 with open(file, "r") as local_file:
                     local_version = local_file.read()
                 
             if not self._check_hash(latest_version, local_version) \
-                or (local_version is None and latest_version is not None):
-                self.changes.append(file)
+                or (local_version is None):
+                
+                log.info(f'  +++ /{file} needs update')
                 # place the new version in the temporary directory
                 tmp_path = join(self.tmp,file)
-                if make_path(tmp_path):
-                    local_file =  open(tmp_path, "w")
-                    local_file.write(latest_version)
-                else:
-                    # we failed
-                    raise OSError(f'Unable to create path at "{tmp_path}"')
-                                
+                try:
+                    if make_path(tmp_path):
+                        with open(tmp_path, "w") as local_file:
+                            local_file.write(latest_version)
+                        # Make a final check that the file exisits in the temp dir
+                        if not exists(tmp_path):
+                            log.error(f'Update: {tmp_path} was not created')
+                            _exit()
 
+                        self.changes.append(file)
+                    else:
+                        # we failed
+                        log.error(f'Update unable to make tmp path to {file}')
+                        _exit()
+                except Exception as e:
+                    log.exception(e,f'Update failed to save {file}')
+                    _exit()
+                    
+                    
         if self.changes:
              return True
         else:
             return False
+        
+        def _exit():
+            # leave this module because something has gone wrong
+            self.changes = []
+            return False
+    
+
