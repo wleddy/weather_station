@@ -19,4 +19,5 @@ def get_ota_file_list():
         'lib/logging/logging.py',
         'lib/weather_station/weather_station.py',
         'lib/weather_station/utils.py',
+        'lib/display/glyph_metrics.py',
         ]
