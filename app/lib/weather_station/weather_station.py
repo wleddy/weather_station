@@ -13,6 +13,7 @@
 from machine import Pin, SPI, PWM, ADC, RTC
 from settings.settings import settings, log
 import time
+import json
 import urequests
 from bmx import BMX
 from display.display import Display, Button
@@ -180,21 +181,25 @@ class Weather_Station:
             display_rows = self.display_coords[-2:] #only interested in the last two elements for temperatures
             row = 0
             changed_sensors = []
+            # update the highs and lows
+            # if any change, display all
+            for sensor in sensors:
+                if sensor.temp_changed() or force_refresh:
+                    changed_sensors.append(sensor)
+                hinlow(sensor.name,sensor.adjusted_temperature)
+                    
             for sensor in sensors:
                 try:
-                    if sensor.temp_changed() or force_refresh:
+                    if changed_sensors:
                         self.display_temp(sensor,display_rows[row],glyphs)
                         log.info(f"{sensor.name}: {sensor.saved_temp}")
                         log.debug(f"{sensor.name}, Corrected: {sensor.adjusted_temperature}")
-                        
-                        changed_sensors.append(sensor)
-                            
                     else:
                         log.debug(f"No Temp change for sensor {sensor.name}")
 
 
                 except Exception as e:
-                    log.error("Sensor Error for {}: {}".format(sensor.name,str(e)))
+                    log.exception(e,f"Sensor Error for {sensor.name}")
                     self.display_temp(sensor,display_rows[row],glyphs)
                     
                 row +=1
@@ -214,7 +219,7 @@ class Weather_Station:
                     export_reading(sensor)
                 except Exception as e:
                     log.info(f'Sensor {sensor.name} export failed, {str(e)}')
-            
+                
             if clk.last_sync_seconds < (time.time() - (3600 * 24)):
                 # if it's been longer than 24 hours since last sync update the clock
                 clk.set_time()
@@ -245,9 +250,6 @@ class Weather_Station:
             try:
                 temp = "{:.1f}".format(sensor.adjusted_temperature) #Truncate to 1 decimal place
                 name = sensor.name
-#                 if settings.debug:
-#                     raw_temp = "R: {:.1f}".format(sensor.saved_temp)
-#                     calibration_factor = "C: {:.2f}".format(sensor.calibration_factor)
             except Exception as e:
                 log.error(f'Error adjusting temperature: {str(e)}')
                 temp = "--?"
@@ -280,28 +282,45 @@ class Weather_Station:
                       landscape=True,
                       spacing=1,
                       )
-        # show the uncorrected value if present
-        self.display.draw_text(
-                      row[0]+24,
-                      self.display.MAX_Y - 6,
-                      raw_temp,
-                      self.display.body_font,
-                      self.display.WHITE,
-                      background=0,
-                      landscape=True,
-                      spacing=1,
-                      )
-        # show the calibration factor if present
-        self.display.draw_text(
-                      row[0]+48,
-                      self.display.MAX_Y - 6,
-                      calibration_factor,
-                      self.display.body_font,
-                      self.display.WHITE,
-                      background=0,
-                      landscape=True,
-                      spacing=1,
-                      )
+        # show the low temp if present
+        hilow = hinlow()
+        w = 0
+        y = self.display.MAX_Y - 6
+        for letter in str(hilow[sensor.name]['low']):
+            y -= w
+            w, h = self.display.draw_letter(
+                          row[0]+24,
+                          y,
+                          letter,
+                          self.display.body_font,
+                          self.display.BLUE,
+                          background=0,
+                          landscape=True,
+                          )
+        for letter in ' - ':
+            y -= w
+            w, h = self.display.draw_letter(
+                          row[0]+24,
+                          y,
+                          letter,
+                          self.display.body_font,
+                          self.display.WHITE,
+                          background=0,
+                          landscape=True,
+                          )
+
+        for letter in str(hilow[sensor.name]['high']):
+            y -= w
+            w, h = self.display.draw_letter(
+                          row[0]+24,
+                          y,
+                          letter,
+                          self.display.body_font,
+                          self.display.RED,
+                          background=0,
+                          landscape=True,
+                          )
+
 
         # for testing
 #         temp = "199.0"
@@ -359,5 +378,68 @@ def export_reading(sensor):
             
     else:
         log.info("Not Connected")
+
+
+
+def hinlow(sensor=None,temp=None):
+    """Save and retrieve the highest and lowest temperatures for today
+        omitting either sensor or temp will return the current hinlow
+        dict from file if file exists
+        
+        returns a dict of dicts if they exist in file.
+        {<sensor_name>:
+            {'date','high','low'}
+        ...
+        }
+    """
+    
+    
+    filename = 'hinlow.txt'
+
+    t = RTC().datetime()
+    t = f'{t[0]}-{("00"+str(t[1]))[-2:]}-{("00"+str(t[2]))[-2:]}'
+        
+    hinlow = {}
+    
+    try:
+        with open(filename,'r') as f:
+            hinlow = json.loads(f.read())
+    except OSError as e:
+        hinlow = {}
+    except Exception as e:
+        log.exception(e,'hinlow: unexpected read error' )
+        
+    if not isinstance(hinlow,dict ):
+        hinlow = {}
+
+    try:
+        temp=int(round(temp,0))
+    except TypeError as e:
+        if temp is not None:
+            log.exception(e,'hinlow:  temp is not a number') 
+            temp = None
+        
+    if not sensor or temp is None:
+        return hinlow
+
+    if sensor not in hinlow:
+         hinlow[sensor] = {}
+
+    if not 'date' in hinlow[sensor]  or hinlow[sensor]['date'] < t:
+        hinlow[sensor] = {} # clear
+        hinlow[sensor]['date'] = t
+
+    if not 'high' in hinlow[sensor]  or hinlow[sensor]['high'] < temp:
+        hinlow[sensor]['high'] = temp
+    if not 'low' in hinlow[sensor]  or hinlow[sensor]['low'] > temp:
+        hinlow[sensor]['low'] = temp
+
+    try:
+        with open(filename,'w') as f:
+             f.write(json.dumps(hinlow))
+    except Exception as e:
+       log.exception(e,'hinlow: Write failed')
+
+    return hinlow
 
         
