@@ -28,7 +28,7 @@ class OTA_Update:
 
         self.url = url if url is not None else settings.ota_source_url
         if not self.url:
-            raise ValueError('OTA_Updater.url may not be elmpty')
+            raise ValueError('OTA_Updater.url may not be empty')
             
         self.headers = headers
         self.files = files
@@ -83,6 +83,7 @@ class OTA_Update:
         self.changes = []
         
         for file in self.files:
+            log.info(f'Update: accessing remote file {file}')
             latest_version = self._get_file(self.url + "/" + file)
             gc.collect()
             
@@ -94,7 +95,7 @@ class OTA_Update:
             
             local_version = None
             if exists(file):
-                log.info(f'Update reading in {file}')
+                log.info(f'Update: accessing local file {file}')
                 with open(file, "r") as local_file:
                     local_version = local_file.read()
                 
