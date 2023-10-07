@@ -106,3 +106,41 @@ class Metrics_78(Metrics):
         self.ONE_WIDTH = 38
         self.SPACE_WIDTH = 26
 
+
+class Metrics_27(Metrics):
+    """Access the 8m pixel tall glyphs... 
+    For the smaller sized glyphs"""
+    def __init__(self,path="/lib/display/images/27/"):
+        self.path = path
+        super().__init__(self.path)
+
+        self.WIDTH = 19
+        self.HEIGHT = 27
+        
+        # most of the characters will be WIDTH wide
+        # some narrower chars are listed here.
+        self.DOT_WIDTH = 15
+        self.COLON_WIDTH = 15
+        self.DASH_WIDTH = 15
+        self.ONE_WIDTH = 15
+        self.SPACE_WIDTH = 15
+
+
+class Metrics_37(Metrics):
+    """Access the 8m pixel tall glyphs... 
+    For the smaller sized glyphs"""
+    def __init__(self,path="/lib/display/images/37/"):
+        self.path = path
+        super().__init__(self.path)
+
+        self.WIDTH = 25
+        self.HEIGHT = 37
+        
+        # most of the characters will be WIDTH wide
+        # some narrower chars are listed here.
+        self.DOT_WIDTH = 15
+        self.COLON_WIDTH = 15
+        self.DASH_WIDTH = 20
+        self.ONE_WIDTH = 20
+        self.SPACE_WIDTH = 20
+
