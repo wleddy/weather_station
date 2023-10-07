@@ -125,9 +125,9 @@ class Weather_Station:
             self.display.clear()
     
         prev_style = None
-        glyphs = glyph_metrics.Metrics_78()
     
         while True:
+            glyphs = glyph_metrics.Metrics_78()
             if not clk.has_time and clk.last_sync_seconds < time.time() - 60:
                 # if we just tryied to get the time and failed, don't try for a while
                 clk.set_time()
@@ -282,52 +282,42 @@ class Weather_Station:
                       landscape=True,
                       spacing=1,
                       )
-        # show the low temp if present
-        hilow = hinlow()
-        w = 0
-        y = self.display.MAX_Y - 6
-        for letter in str(hilow[sensor.name]['low']):
-            y -= w
-            w, h = self.display.draw_letter(
-                          row[0]+24,
-                          y,
-                          letter,
-                          self.display.body_font,
-                          self.display.BLUE,
-                          background=0,
-                          landscape=True,
-                          )
-        for letter in ' - ':
-            y -= w
-            w, h = self.display.draw_letter(
-                          row[0]+24,
-                          y,
-                          letter,
-                          self.display.body_font,
-                          self.display.WHITE,
-                          background=0,
-                          landscape=True,
-                          )
-
-        for letter in str(hilow[sensor.name]['high']):
-            y -= w
-            w, h = self.display.draw_letter(
-                          row[0]+24,
-                          y,
-                          letter,
-                          self.display.body_font,
-                          self.display.RED,
-                          background=0,
-                          landscape=True,
-                          )
-
-
+        
         # for testing
 #         temp = "199.0"
-
+        
+        
         # Finnally, display the temperture
         self.draw_glyphs(glyphs,row[0],row[1],temp)
+        
+        # high and low temps
+        # show the low temp if present
+        hiorlow = hinlow()
+        try:
+            temp = int(float(temp))
+        except:
+            # this can happen if temp is NaN
+            temp = None
+            
+        if temp is not None:
+            if temp >= 100 or hiorlow[sensor.name]['high'] >= 100:
+                # use smaller type
+                glyphs = glyph_metrics.Metrics_27()
+            else:
+                glyphs = glyph_metrics.Metrics_37()
+                
+            old_path = glyphs.path
+            glyphs.path = old_path + 'blue/'
+            text = str(hiorlow[sensor.name]['low'])
+            x = row[0]+30        
+            y = self.display.MAX_Y - 6 - glyphs.string_width(text)
+            self.draw_glyphs(glyphs,x,y,text)
+            glyphs.path = old_path + 'red/'
+            text = str(hiorlow[sensor.name]['high'])
+            y = y - int(glyphs.WIDTH/2) - glyphs.string_width(text)
+            self.draw_glyphs(glyphs,x,y,text)
 
+        
     def draw_glyphs(self,glyphs,x,y,value):
         # send each digit to the display one at a time in reverse order
 
