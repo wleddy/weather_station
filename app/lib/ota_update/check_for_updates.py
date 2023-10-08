@@ -21,8 +21,6 @@ class Check_For_Updates:
         else: 
             self.fetch_only = getattr(settings,'fetch_only',False)
         
-        self.v_pos = -1 # the screen display if used
-        self.changes = [] #paths to updated files
         self.tmp='/tmp/'
         self.file_list = []
 
@@ -41,6 +39,20 @@ class Check_For_Updates:
             log.info('--- Fetch Only ---')
         
         delete_all(self.tmp)
+        
+        # First check 'settings/ota_files.py' to see if it needs update
+        # If so, install that first then come back and do the rest
+        log.info('Checking "settings/ota_files.py"')
+        ota = OTA_Update(files=['settings/ota_files.py'],tmp=self.tmp)
+        ota.update()
+                        
+        if ota.changes:
+            if self.fetch_only:
+                return True
+            else:
+                self.install_updates(ota.changes)
+
+
         ota = OTA_Update(files=self.file_list,tmp=self.tmp)
         ota.update()
                     
@@ -51,30 +63,31 @@ class Check_For_Updates:
             return True
                 
         if ota.changes:
-            log.info('Moving files')
-            for file in ota.changes:
-                # build the path to the new file if needed
-                file = join('/',file)
-                if make_path(file):
-                    #path should now exist
-                    log.info(f'file: {file} being moved')
-                    tmp_file = open(join(self.tmp,file), "r")
-                    local_file =  open(file, "w")
-                    local_file.write(tmp_file.read())
-
-                    local_file.close()
-                    tmp_file.close()
-                else:
-                    log.info(f'Could not make path for {file}')
-                    return False
-            
-            if not settings.debug:
-                delete_all(self.tmp)
-            self.v_pos = -1 #force screen clear
-            log.info("Rebooting...")
-            machine.reset()
-            
+            self.install_updates(ota.changes)
         else:
             log.info('No update needed')
             return False                
 
+    def install_updates(self,changes):
+        log.info('Moving files')
+        for file in changes:
+            # build the path to the new file if needed
+            file = join('/',file)
+            if make_path(file):
+                #path should now exist
+                log.info(f'file: {file} being moved')
+                tmp_file = open(join(self.tmp,file), "r")
+                local_file =  open(file, "w")
+                local_file.write(tmp_file.read())
+
+                local_file.close()
+                tmp_file.close()
+            else:
+                log.info(f'Could not make path for {file}')
+                return False
+        
+        if not settings.debug:
+            delete_all(self.tmp)
+        log.info("Rebooting...")
+        machine.reset()
+        
