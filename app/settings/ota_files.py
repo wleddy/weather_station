@@ -10,6 +10,7 @@ def get_ota_file_list():
         'settings/settings.py',
         'settings/calibration_data.py',
         'main.py',
+        'lib/display/glyph_metrics.py',
         'lib/ota_update/ota_update.py',
         'lib/ota_update/check_for_updates.py',
         'lib/bmx.py',
@@ -17,7 +18,6 @@ def get_ota_file_list():
         'lib/wifi_connect.py',
         'lib/os_path.py',
         'lib/logging/logging.py',
-        'lib/weather_station/weather_station.py',
         'lib/weather_station/utils.py',
-        'lib/display/glyph_metrics.py',
+        'lib/weather_station/weather_station.py',
         ]
