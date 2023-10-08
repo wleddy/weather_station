@@ -38,7 +38,14 @@ class OTA_Update:
         self.tmp = tmp
         self.changes = []
         
-
+    
+    def _hash(self,data):
+        if data is None:
+            return ''
+        
+        return str(uhashlib.sha1(data.encode()).digest())
+    
+    
     def _check_hash(self, x, y):
         if x is None or y is None:
             return True
@@ -85,7 +92,8 @@ class OTA_Update:
         for file in self.files:
             log.info(f'Update: accessing remote file {file}')
             latest_version = self._get_file(self.url + "/" + file)
-            gc.collect()
+            self.stash_file(file,latest_version)
+            latest_hash = self._hash(latest_version)
             
             if latest_version is None:
                 # a file does not exist on the server.
@@ -93,35 +101,45 @@ class OTA_Update:
                 log.info(f'Update: file {file} not found on server')
                 continue
             
+            del latest_version
+            gc.collect()
+
             local_version = None
             if exists(file):
                 log.info(f'Update: accessing local file {file}')
                 with open(file, "r") as local_file:
                     local_version = local_file.read()
+                    local_hash = self._hash(local_version)
                 
-            if not self._check_hash(latest_version, local_version) \
+#             if not self._check_hash(latest_version, local_version) \
+            if not latest_hash == local_hash \
                 or (local_version is None):
-                
                 log.info(f'  +++ /{file} needs update')
-                # place the new version in the temporary directory
-                tmp_path = join(self.tmp,file)
-                try:
-                    if make_path(tmp_path):
-                        with open(tmp_path, "w") as local_file:
-                            local_file.write(latest_version)
-                        # Make a final check that the file exisits in the temp dir
-                        if not exists(tmp_path):
-                            log.error(f'Update: {tmp_path} was not created')
-                            _exit()
-
-                        self.changes.append(file)
-                    else:
-                        # we failed
-                        log.error(f'Update unable to make tmp path to {file}')
-                        _exit()
-                except Exception as e:
-                    log.exception(e,f'Update failed to save {file}')
+                self.changes.append(file)
+                
+            del local_version
+            gc.collect()
+                
+    def stash_file(self,file,latest_version):
+        # place the new version in the temporary directory
+        tmp_path = join(self.tmp,file)
+        try:
+            if make_path(tmp_path):
+                with open(tmp_path, "w") as local_file:
+                    local_file.write(latest_version)
+                # Make a final check that the file exisits in the temp dir
+                if not exists(tmp_path):
+                    log.error(f'Update: {tmp_path} was not created')
                     _exit()
+
+                
+            else:
+                # we failed
+                log.error(f'Update unable to make tmp path to {file}')
+                _exit()
+        except Exception as e:
+            log.exception(e,f'Update failed to save {file}')
+            _exit()
                     
                     
         if self.changes:

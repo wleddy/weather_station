@@ -76,12 +76,14 @@ class Check_For_Updates:
             if make_path(file):
                 #path should now exist
                 log.info(f'file: {file} being moved')
-                tmp_file = open(join(self.tmp,file), "r")
-                local_file =  open(file, "w")
-                local_file.write(tmp_file.read())
-
-                local_file.close()
-                tmp_file.close()
+                try:
+                    with open(join(self.tmp,file), "r") as tmp_file:
+                        with open(file, "w") as local_file:
+                            local_file.write(tmp_file.read())
+                except:
+                    log.error('install_updates failed')
+                    log.error(f'file {file} was not in tmp dir')
+                    return False
             else:
                 log.info(f'Could not make path for {file}')
                 return False
