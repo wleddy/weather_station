@@ -192,7 +192,7 @@ class Weather_Station:
                 try:
                     if changed_sensors:
                         self.display_temp(sensor,display_rows[row],glyphs)
-                        log.info(f"{sensor.name}: {sensor.saved_temp}")
+                        log.debug(f"{sensor.name}: {sensor.saved_temp}")
                         log.debug(f"{sensor.name}, Corrected: {sensor.adjusted_temperature}")
                     else:
                         log.debug(f"No Temp change for sensor {sensor.name}")
