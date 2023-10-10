@@ -1,5 +1,6 @@
 import sys
 import time
+import os
 
 CRITICAL = const(50)
 ERROR = const(40)
@@ -22,6 +23,8 @@ _level = INFO  # ignore messages which are less severe
 _format = "%(asctime)s:%(levelname)s:%(message)s"  # default message format
 _loggers = dict()
 
+_max_size = 15000 # max size of the log file
+_prune_size = 10000 # size to prune the log file too when too big
 
 class Logger:
 
@@ -51,6 +54,7 @@ class Logger:
             if _filename is None:
                 _ = _stream.write(log_str)
             else:
+                prune(_filename)
                 with open(_filename, "a") as fp:
                     fp.write(log_str)
                 # Allways print out the log message when in settings.debug
@@ -142,3 +146,29 @@ def critical(message, *args):
 
 def exception(exception, message, *args):
     getLogger().exception(exception, message, *args)
+    
+def prune(filename):
+    # reduce log file to no more than 
+    try:
+        s = os.stat(filename)[6] #file size in bytes
+        tmp_file = filename + 'tmp'
+        
+        if s > _max_size:
+            with open(filename,'r') as old:
+                old.seek(s - _prune_size)
+                with open(tmp_file,'w') as new:
+                    new.write('------------- pruned ----------------\n')
+                    x = True
+                    while x:
+                        x = old.readline()
+                        if x:
+                            new.write(x)
+                            
+            # swap files
+            os.remove(filename)
+            os.rename(tmp_file,filename)
+            
+    except Exception as e:
+        # logging this may cause an infinate loop
+        print(f'Exception pruning log: {str(e)}')
+        
