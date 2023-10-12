@@ -4,12 +4,12 @@ for OTA updates here."""
 import os
 
 def get_ota_file_list():
-    return [ 'settings/ota_files.py', # Always include this one
+    return [ 
+        'main.py',
         'settings/time_functions.py',
         'settings/credentials.conf',
         'settings/settings.py',
         'settings/calibration_data.py',
-        'main.py',
         'lib/display/glyph_metrics.py',
         'lib/ota_update/ota_update.py',
         'lib/ota_update/check_for_updates.py',

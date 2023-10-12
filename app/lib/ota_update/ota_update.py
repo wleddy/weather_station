@@ -92,14 +92,15 @@ class OTA_Update:
         for file in self.files:
             log.info(f'Update: accessing remote file {file}')
             latest_version = self._get_file(self.url + "/" + file)
-            self.stash_file(file,latest_version)
-            latest_hash = self._hash(latest_version)
             
             if latest_version is None:
                 # a file does not exist on the server.
                 # we may want to delete the local version
                 log.info(f'Update: file {file} not found on server')
                 continue
+            
+            self.stash_file(file,latest_version)
+            latest_hash = self._hash(latest_version)
             
             del latest_version
             gc.collect()
@@ -115,6 +116,13 @@ class OTA_Update:
             if not latest_hash == local_hash \
                 or (local_version is None):
                 log.info(f'  +++ /{file} needs update')
+                log.debug(f'local hash:  {local_hash}')
+                log.debug(f'latest hash: {latest_hash}')
+                if local_version is True:
+                    log.debug('Local version is True')
+                elif len(local_version) > 50:
+                    log.debug('local version is text')
+                    
                 self.changes.append(file)
                 
             del local_version
@@ -122,7 +130,7 @@ class OTA_Update:
                 
     def stash_file(self,file,latest_version):
         # place the new version in the temporary directory
-        tmp_path = join(self.tmp,file)
+        tmp_path = join('/',self.tmp,file)
         try:
             if make_path(tmp_path):
                 with open(tmp_path, "w") as local_file:

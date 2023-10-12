@@ -7,7 +7,9 @@ import machine
 from ota_update.ota_update import OTA_Update
 from settings.ota_files import get_ota_file_list
 from wifi_connect import connection
-from os_path import make_path, delete_all, join
+from os_path import make_path, delete_all, join, exists
+import os
+
 
 class Check_For_Updates:
     
@@ -23,6 +25,7 @@ class Check_For_Updates:
         
         self.tmp='/tmp/'
         self.file_list = []
+        self.changes = []
 
     def run(self):
         """Update any files that need it..."""
@@ -40,8 +43,22 @@ class Check_For_Updates:
         
         delete_all(self.tmp)
         
-        # First check 'settings/ota_files.py' to see if it needs update
-        # If so, install that first then come back and do the rest
+        # First check the remote settings/latest_version.txt file
+        # to see if the version time marker has changes.
+        # The file contains the result of time.time()
+        # The developer is responsible for updating the file on the server
+        # side to enable an update.
+        # If the version time has not changed, skip the update process
+        # If so add the file to the changed files list
+        file = '/settings/latest_version.txt'
+        log.info(f'Checking {file}')
+        ota = OTA_Update(files=[file],tmp=self.tmp)
+        ota.update()
+        if ota.changes:
+            self.changes.extend(ota.changes)
+        
+        # Next check 'settings/ota_files.py' to see if it needs update
+        # If so, install that first, and reboot
         log.info('Checking "settings/ota_files.py"')
         ota = OTA_Update(files=['settings/ota_files.py'],tmp=self.tmp)
         ota.update()
@@ -52,18 +69,18 @@ class Check_For_Updates:
             else:
                 self.install_updates(ota.changes)
 
-
+        # If we got this far, run the full update
         ota = OTA_Update(files=self.file_list,tmp=self.tmp)
         ota.update()
-                    
-        log.info('{} files ready to update'.format(len(ota.changes)))
-        log.info('Updating: {}'.format(', '.join(ota.changes)))
+        self.changes.extend(ota.changes)
+        log.info('{} files ready to update'.format(len(self.changes)))
+        log.info('Updating: {}'.format(', '.join(self.changes)))
         
         if self.fetch_only:
             return True
                 
-        if ota.changes:
-            self.install_updates(ota.changes)
+        if self.changes:
+            self.install_updates(self.changes)
         else:
             log.info('No update needed')
             return False                
@@ -73,16 +90,21 @@ class Check_For_Updates:
         for file in changes:
             # build the path to the new file if needed
             file = join('/',file)
+            tmp_file = join('/',self.tmp,file)
             if make_path(file):
                 #path should now exist
                 log.info(f'file: {file} being moved')
                 try:
-                    with open(join(self.tmp,file), "r") as tmp_file:
-                        with open(file, "w") as local_file:
-                            local_file.write(tmp_file.read())
-                except:
-                    log.error('install_updates failed')
+                    if exists(file):
+                        os.remove(file)
+                        
+                    if make_path(file):
+                        os.rename(tmp_file,file)
+                    else:
+                        raise OSError("Unable to move file")
+                except Exception as e:
                     log.error(f'file {file} was not in tmp dir')
+                    log.exception(e,'Update aborted')
                     return False
             else:
                 log.info(f'Could not make path for {file}')
