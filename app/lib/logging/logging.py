@@ -1,6 +1,8 @@
 import sys
 import time
 import os
+import urequests
+import json
 
 CRITICAL = const(50)
 ERROR = const(40)
@@ -50,15 +52,22 @@ class Logger:
                 .format(tm[0], tm[1], tm[2], tm[3], tm[4], tm[5])
 
             log_str = _format % record + "\n"
+            
 
             if _filename is None:
                 _ = _stream.write(log_str)
             else:
+                from settings.settings import settings
+                try:
+                    urequests.post(settings.log_export_url,data=json.dumps({'device_name':'remote','log':log_str}))
+                except Exception as e:
+                    print("Log post error: ",str(e))
+                    pass # most likely don't have a connection
+                
                 prune(_filename)
                 with open(_filename, "a") as fp:
                     fp.write(log_str)
                 # Allways print out the log message when in settings.debug
-                from settings.settings import settings
                 if settings.debug:
                     print(message)
 

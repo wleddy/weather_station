@@ -66,6 +66,11 @@ class Settings:
         dest = '/api/add_reading'
         return f'{self.host}{dest}'
 
+    @property    
+    def log_export_url(self):
+        #URL for reporting results
+        dest = '/api/log'
+        return f'{self.host}{dest}'
 
 settings = Settings()
 
