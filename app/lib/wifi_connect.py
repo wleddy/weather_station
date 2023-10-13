@@ -1,4 +1,4 @@
-
+from settings.settings import log
 import network
 import time
 import json
@@ -15,7 +15,7 @@ class Wifi_Connect:
     def connect(self):
         if self.isconnected():
             return
-        print('connecting...')
+        log.info('connecting...')
         self.wlan.active(True)
         # try to use last connection
         last_dict = self._last_ssid()
@@ -27,7 +27,7 @@ class Wifi_Connect:
             self._connect_from_list([name],last_dict)
 
         if not self.access_point:
-            print('scan for available access points')
+            log.info('scan for available access points')
             scan = self._scan()
 
             # open the credentials file
@@ -36,9 +36,9 @@ class Wifi_Connect:
             try:
                 with open(self.credentials) as f:
                     c = f.readlines()
-                print("ssid_credentials:",c)
+                log.debug("ssid_credentials: {str(c)}")
             except Exception as e:
-                print(str(e))
+                log.exception(e,str(e))
             
             ssid_credentials = {}
             for x in c:
@@ -53,7 +53,7 @@ class Wifi_Connect:
                 self._connect_from_list(scan,ssid_credentials)
 
         if not self.access_point:
-            print("Unable to connect")
+            log.info("Unable to connect")
             self.wlan.active(False)
           
     def _last_ssid(self,ssid=None,pw=None):
@@ -78,7 +78,7 @@ class Wifi_Connect:
                 else:
                     out = json.loads(f.readline())
         except Exception as e:
-            print("Unable to access last_ssid: {}".format(str(e)))
+            log.info("Unable to access last_ssid: {}".format(str(e)))
             
         return out
     
@@ -88,42 +88,35 @@ class Wifi_Connect:
         ap_credentials is a dict as:
         {'ap_name':'ap_password',...}
         """
-        
-#         # Connect to network
-#         self.access_point = ""
-#         self.wlan = network.WLAN(network.STA_IF)
-#         self.wlan.active(True)
-#         self.wlan.disconnect() # may not be needed
 
         # try to find one of our credentals to match
         for ap in ap_list:
-            print("Trying:",ap)
+            log.debug(f"Trying: {ap}")
             if ap in ap_credentials:
                 # try to connect to this ap
-                print("Connect to {} with key {}".format(ap,ap_credentials[ap]))
+                log.debug("Connect to {} with key {}".format(ap,ap_credentials[ap]))
                 self.wlan.connect(ssid=ap,key=ap_credentials[ap])
                 trys = 20
                 while trys > 0 and not self.wlan.isconnected():
-                    print(trys,":",self.wlan.status())
+                    log.debug(f'{trys}: {self.wlan.status()}')
                     time.sleep(.5)
                     trys -= 1
                 if self.wlan.isconnected() and self.wlan.status() == network.STAT_GOT_IP:
-                    print("Connected. Status:",
-                          self.wlan.status())
+                    log.info(f"Connected to {ap}")
                     self.access_point = ap
                     #Save credentials for last connection
                     self._last_ssid(ap,ap_credentials[ap])
                     break
                 # SSID not connected
                 else:
-                    print("Connection Failed: ",end="")
                     if self.wlan.status() == network.STAT_NO_AP_FOUND:
-                        print("Access Point not found",end="")
+                        reason = "Access Point not found"
                     elif self.wlan.status() == network.STAT_WRONG_PASSWORD:
-                        print("Wrong Password",end="")
+                        reason = "Wrong Password"
                     else:
-                        print("Unknown Connection Error ({})".format(self.wlan.status()),end="")
-                    print()
+                        reason = "Unknown Connection Status ({})".format(self.wlan.status())
+                        
+                    log.info(f"Connection Failed: {reason}")
                     self.wlan.disconnect()
 
                         
@@ -158,7 +151,7 @@ class Wifi_Connect:
             scan = self.wlan.scan()
             aps_db = []
             aps_names = []
-            print("Scan found:",end='')
+            result = "Scan found: "
             for x in range(4):
                 scan = self.wlan.scan()
                 for s in scan:
@@ -167,14 +160,14 @@ class Wifi_Connect:
                         aps_names.append(name)
                         x = "000"+str(abs(s[3]))
                         aps_db.append(x[-3:len(x)]+"/"+name) # we want to sort by db
-                print(",",len(aps_db),end="")
+                result += f", {str(len(aps_db))}"
                 time.sleep(1)
                 
-            print('')
+            log.debug(result)
             
             # sort by best signal strength, lowest first
             aps_db.sort()
-            print("Scaned:",aps_db)
+            log.debug(f"Scaned: {str(aps_db)}")
             scan=[]
             for l in aps_db:
                 scan.append(l.split('/')[1])
