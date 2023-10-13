@@ -50,12 +50,15 @@ class Check_For_Updates:
         # side to enable an update.
         # If the version time has not changed, skip the update process
         # If so add the file to the changed files list
-        file = '/settings/latest_version.txt'
+        file = 'settings/version.txt'
         log.info(f'Checking {file}')
         ota = OTA_Update(files=[file],tmp=self.tmp)
         ota.update()
         if ota.changes:
             self.changes.extend(ota.changes)
+        else:
+            log.info(f'{file} did not change. No update needed')
+            return True # no changes to update
         
         # Next check 'settings/ota_files.py' to see if it needs update
         # If so, install that first, and reboot
