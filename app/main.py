@@ -21,7 +21,7 @@ settings.fetch_only = False
 # settings._host = 'http://192.168.0.100:5000'
 
 log.setLevel(log.INFO)
-log.info("Starting up")
+log.info("-------------------- Starting up ----------------------")
 
 Weather_Station().start()
 
