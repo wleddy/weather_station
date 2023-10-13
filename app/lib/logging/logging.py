@@ -61,8 +61,8 @@ class Logger:
                 try:
                     urequests.post(settings.log_export_url,data=json.dumps({'device_name':'remote','log':log_str}))
                 except Exception as e:
-                    print("Log post error: ",str(e))
-                    pass # most likely don't have a connection
+                    if 'EHOSTUNREACH' not in str(e): # most likely don't have a connection
+                        print("Log post error: ",str(e)) 
                 
                 prune(_filename)
                 with open(_filename, "a") as fp:
