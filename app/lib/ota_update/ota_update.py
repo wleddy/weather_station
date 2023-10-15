@@ -122,30 +122,7 @@ class OTA_Update:
                 gc.collect()
                 
                 self.changes.append(file)
-                
-#             remote_hash = None
-#             if local_hash:
-#                 remote_hash = self._get_file(self.url + "/" + file,hash_only=True)
-#                 log.debug(f'Remote Hash received: {remote_hash}')
-#             if remote_hash is None:
-#                 # a file does not exist on the server.
-#                 # we may want to delete the local version
-#                 log.info(f'Update: file {file} not found on server')
-#                 continue
-#                         
-#             if not remote_hash == local_hash \
-#                 or not local_version:
-#                 log.info(f'  +++ /{file} needs update')
-#                 log.debug(f'local hash:  {local_hash}')
-#                 log.debug(f'remote hash: {remote_hash}')
-#                 log.info(f'Update: downloading file {file}')
-#                 remote_version = self._get_file(self.url + "/" + file)
-#                 self.stash_file(file,remote_version)
-#                 del remote_version
-#                 gc.collect()
-#                     
-#                 self.changes.append(file)
-                
+                                
                 
     def stash_file(self,file,remote_version):
         # place the new version in the temporary directory
