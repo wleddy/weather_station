@@ -63,10 +63,22 @@ class OTA_Update:
         return out
 
 
-    def _get_file(self, url):
-        log.debug(f'_get_file {url}')
-        gc.collect()
+    def _get_file(self, url,hash_only=False):
+        log.debug(f'_get_file {url}, hash_only={hash_only}')
+        if hash_only:
+            url = f'{url}/hash/'
         payload = urequests.get(url, headers=self.headers)
+        code = payload.status_code
+        log.debug(f'_get_file status code: {code}')
+        if code == 200:
+            return payload.text
+        else:
+            return None
+
+    def _post_file(self, url,filename,local_hash):
+        log.debug(f'_post_file {url}, {hash}')
+        data={'filename':filename,'local_hash':local_hash}
+        payload = urequests.post(url, json=data, headers=self.headers)
         code = payload.status_code
         log.debug(f'_get_file status code: {code}')
         if code == 200:
@@ -90,51 +102,58 @@ class OTA_Update:
         self.changes = []
         
         for file in self.files:
-            log.info(f'Update: accessing remote file {file}')
-            latest_version = self._get_file(self.url + "/" + file)
             
-            if latest_version is None:
-                # a file does not exist on the server.
-                # we may want to delete the local version
-                log.info(f'Update: file {file} not found on server')
-                continue
-            
-            self.stash_file(file,latest_version)
-            latest_hash = self._hash(latest_version)
-            
-            del latest_version
-            gc.collect()
-
-            local_version = None
+            local_hash = None
+            local_version = False
             if exists(file):
                 log.info(f'Update: accessing local file {file}')
                 with open(file, "r") as local_file:
                     local_version = local_file.read()
                     local_hash = self._hash(local_version)
+                local_version = True
+                gc.collect()
                 
-#             if not self._check_hash(latest_version, local_version) \
-            if not latest_hash == local_hash \
-                or (local_version is None):
+            remote_version = self._post_file(self.url,file,local_hash)
+            if remote_version:
                 log.info(f'  +++ /{file} needs update')
-                log.debug(f'local hash:  {local_hash}')
-                log.debug(f'latest hash: {latest_hash}')
-                if local_version is True:
-                    log.debug('Local version is True')
-                elif len(local_version) > 50:
-                    log.debug('local version is text')
-                    
+                log.debug(f'Update: downloading file {file}')
+                self.stash_file(file,remote_version)
+                del remote_version
+                gc.collect()
+                
                 self.changes.append(file)
                 
-            del local_version
-            gc.collect()
+#             remote_hash = None
+#             if local_hash:
+#                 remote_hash = self._get_file(self.url + "/" + file,hash_only=True)
+#                 log.debug(f'Remote Hash received: {remote_hash}')
+#             if remote_hash is None:
+#                 # a file does not exist on the server.
+#                 # we may want to delete the local version
+#                 log.info(f'Update: file {file} not found on server')
+#                 continue
+#                         
+#             if not remote_hash == local_hash \
+#                 or not local_version:
+#                 log.info(f'  +++ /{file} needs update')
+#                 log.debug(f'local hash:  {local_hash}')
+#                 log.debug(f'remote hash: {remote_hash}')
+#                 log.info(f'Update: downloading file {file}')
+#                 remote_version = self._get_file(self.url + "/" + file)
+#                 self.stash_file(file,remote_version)
+#                 del remote_version
+#                 gc.collect()
+#                     
+#                 self.changes.append(file)
                 
-    def stash_file(self,file,latest_version):
+                
+    def stash_file(self,file,remote_version):
         # place the new version in the temporary directory
         tmp_path = join('/',self.tmp,file)
         try:
             if make_path(tmp_path):
                 with open(tmp_path, "w") as local_file:
-                    local_file.write(latest_version)
+                    local_file.write(remote_version)
                 # Make a final check that the file exisits in the temp dir
                 if not exists(tmp_path):
                     log.error(f'Update: {tmp_path} was not created')

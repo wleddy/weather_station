@@ -59,7 +59,7 @@ class Logger:
             else:
                 from settings.settings import settings
                 try:
-                    urequests.post(settings.log_export_url,data=json.dumps({'device_name':'remote','log':log_str}))
+                    urequests.post(settings.log_export_url,data=json.dumps({'device_id':settings.device_id,'log':log_str}))
                 except Exception as e:
                     if 'EHOSTUNREACH' not in str(e): # most likely don't have a connection
                         print("Log post error: ",str(e)) 

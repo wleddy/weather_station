@@ -12,6 +12,13 @@ class Settings:
         self.testing = False
         self.calibration_data = calibration_data
         
+        # Really should be loading some data from instance here...
+        self.device_id = 1
+        self.sensors = [
+                {'name': 'Outdoor', 'id':2,'scale':'f'},
+                {'name': 'Indoor', 'id':1,'scale':'f'},
+            ]
+
         # display spi setup
         self.spi = SPI(0,
             sck=Pin(2),
@@ -27,21 +34,26 @@ class Settings:
         self.bmx_0_bus_id=1
         self.bmx_0_scl_pin=19
         self.bmx_0_sda_pin=18
-        self.bmx_0_name = "Outdoor"
-        self.bmx_0_sensor_id = 2
-        self.bmx_0_cal_data = self.calibration_data(self.bmx_0_name)
-        self.bmx_0_temp_scale = 'f'
         
         # indoor BMX settings
         self.bmx_1_bus_id=0
         self.bmx_1_scl_pin=1
         self.bmx_1_sda_pin=0
-        self.bmx_1_name = "Indoor"
-        self.bmx_1_sensor_id = 1
-        self.bmx_1_cal_data = self.calibration_data(self.bmx_1_name)
-        self.bmx_1_temp_scale = 'f'
         
+        if len(self.sensors)>0:
+            self.bmx_0_name = self.sensors[0]['name']
+            self.bmx_0_sensor_id = int(self.sensors[0]['id'])
+            self.bmx_0_temp_scale = self.sensors[0]['scale']
+            self.bmx_0_cal_data = self.calibration_data(self.bmx_0_name)
+        if len(self.sensors)>1:
+            self.bmx_1_name = self.sensors[1]['name']
+            self.bmx_1_sensor_id = int(self.sensors[1]['id'])
+            self.bmx_1_temp_scale = self.sensors[1]['scale']
+            self.bmx_1_cal_data = self.calibration_data(self.bmx_1_name)
+            
         self._host = '' # Use to override the default hosts
+
+
         
     @property
     def host(self):
