@@ -43,6 +43,9 @@ def export_reading(sensor):
                     )
 
             log.debug(f"Got response: {r.text}")
+            if r.text.upper() != 'OK':
+                log.info(f'export_reading result: r.text[0:80]')
+                
             del r
             gc.collect()
             

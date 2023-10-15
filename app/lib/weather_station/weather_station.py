@@ -78,9 +78,9 @@ class Weather_Station:
             self.display.centered_text(
                 "Checking for updates...", y=75, width=self.display.MAX_Y)
             try:
-                Check_For_Updates(display=None,fetch_only=False).run()
+                Check_For_Updates().run()
             except Exception as e:
-                log.exception(e,f'Initial update attempt failed: {str(e)}')
+                log.exception(e,f'Initial update attempt failed')
                 
         time.sleep(2)
         self.display.clear()
@@ -101,7 +101,7 @@ class Weather_Station:
                         )
         except Exception as e:
             mes = f"Outdoor sensor Failed"
-            log.exception(e,f'{mes}, {str(e)}')
+            log.exception(e,f'{mes}')
             self.display.centered_text(mes,y=25,width=self.display.MAX_Y)
         
         try:
@@ -117,7 +117,7 @@ class Weather_Station:
                         )
         except Exception as e:
             mes = f"Indoor sensor Failed"
-            log.exception(e,f'{mes}, {str(e)}')
+            log.exception(e,f'{mes}')
             self.display.centered_text(mes,y=50,width=self.display.MAX_Y)
         
         if len(sensors) < 2:
@@ -218,7 +218,7 @@ class Weather_Station:
                 try:
                     export_reading(sensor)
                 except Exception as e:
-                    log.info(f'Sensor {sensor.name} export failed, {str(e)}')
+                    log.info(f'Sensor {sensor.name} export failed')
                 
             if clk.last_sync_seconds < (time.time() - (3600 * 24)):
                 # if it's been longer than 24 hours since last sync update the clock
@@ -228,9 +228,9 @@ class Weather_Station:
                 last_update_check = time.time()
                 try:
                     # check for updates
-                    Check_For_Updates(display=None, fetch_only=False).run()
+                    Check_For_Updates().run()
                 except Exception as e:
-                    log.exception(e,f"Error during update attempt: {str(e)}")
+                    log.exception(e,f"Error during update attempt")
                 
             # Sync the display time to the top of the minute
             # then sleep for 1 minute
@@ -251,7 +251,7 @@ class Weather_Station:
                 temp = "{:.1f}".format(sensor.adjusted_temperature) #Truncate to 1 decimal place
                 name = sensor.name
             except Exception as e:
-                log.error(f'Error adjusting temperature: {str(e)}')
+                log.exception(e,f'Error adjusting temperature')
                 temp = "--?"
 
         # clear the row
