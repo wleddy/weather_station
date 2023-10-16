@@ -34,25 +34,31 @@ class Logger:
         self.name = name
         self.level = _level
 
+    def _get_log_str(self,level,message,*args):
+        if args:
+            message = message % args
+
+        record = dict()
+        record["levelname"] = _level_str.get(level, str(level))
+        record["level"] = level
+        record["message"] = message
+        record["name"] = self.name
+        tm = time.localtime()
+        record["asctime"] = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}" \
+            .format(tm[0], tm[1], tm[2], tm[3], tm[4], tm[5])
+
+        return _format % record + "\n"
+    
+        
     def log(self, level, message, *args):
         if level < self.level:
             return
 
         try:
-            if args:
-                message = message % args
-
-            record = dict()
-            record["levelname"] = _level_str.get(level, str(level))
-            record["level"] = level
-            record["message"] = message
-            record["name"] = self.name
-            tm = time.localtime()
-            record["asctime"] = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}" \
-                .format(tm[0], tm[1], tm[2], tm[3], tm[4], tm[5])
-
-            log_str = _format % record + "\n"
+            error_text = ''
+            err = None
             
+            log_str = self._get_log_str(level,message,*args)
 
             if _filename is None:
                 _ = _stream.write(log_str)
@@ -62,11 +68,18 @@ class Logger:
                     urequests.post(settings.log_export_url,data=json.dumps({'device_id':settings.device_id,'log':log_str}))
                 except Exception as e:
                     if 'EHOSTUNREACH' not in str(e): # most likely don't have a connection
-                        print("Log post error: ",str(e)) 
+                        # log the error even thou it probably can't be sent to server...
+                        err = e
+                        error_text = self._get_log_str(level,f"Log post error: {str(e)}")
                 
                 prune(_filename)
                 with open(_filename, "a") as fp:
                     fp.write(log_str)
+                    if error_text:
+                        fp.write(error_text)
+                        sys.print_exception(err, fp)
+                        message += '\n' + error_text
+                        
                 # Allways print out the log message when in settings.debug
                 if settings.debug:
                     print(message)
