@@ -139,6 +139,15 @@ class Weather_Station:
                 
             force_refresh = False
             
+            # set the display brightness
+            # daylight reading gets greater as it gets darker
+            self.daylight = int(self.daylight_sensor.read_u16())
+            self.brightness = self.MAX_ADC - int(self.daylight * .25)
+            if self.brightness < 20000:
+                self.brightness = 20000
+
+            self.led.duty_u16(self.brightness)
+            
             if style != prev_style:
                 prev_style = style
                 force_refresh = True
@@ -181,38 +190,20 @@ class Weather_Station:
             display_rows = self.display_coords[-2:] #only interested in the last two elements for temperatures
             row = 0
             changed_sensors = []
-            # update the highs and lows
-            # if any change, display all
+            
             for sensor in sensors:
                 if sensor.temp_changed() or force_refresh:
-                    changed_sensors.append(sensor)
-                hinlow(sensor.name,sensor.adjusted_temperature)
-                    
-            for sensor in sensors:
-                try:
-                    if changed_sensors:
+                    try:
+                        changed_sensors.append(sensor)
+                        hinlow(sensor.name,sensor.adjusted_temperature)
                         self.display_temp(sensor,display_rows[row],glyphs)
-                        log.debug(f"{sensor.name}: {sensor.saved_temp}")
-                        log.debug(f"{sensor.name}, Corrected: {sensor.adjusted_temperature}")
-                    else:
-                        log.debug(f"No Temp change for sensor {sensor.name}")
-
-
-                except Exception as e:
-                    log.exception(e,f"Sensor Error for {sensor.name}")
-                    self.display_temp(sensor,display_rows[row],glyphs)
-                    
+                    except Exception as e:
+                        log.exception(e,f"Sensor Error for {sensor.name}")
+                        self.display_temp(sensor,display_rows[row],glyphs)
+                        
+                log.info(f'Reading- {sensor.name}: raw; {sensor.c_to_f(sensor.temperature)}, adjusted; {sensor.adjusted_temperature}')
                 row +=1
                        
-            # set the display brightness
-            # daylight reading gets greater as it gets darker
-            self.daylight = int(self.daylight_sensor.read_u16())
-            self.brightness = self.MAX_ADC - int(self.daylight * .25)
-            if self.brightness < 20000:
-                self.brightness = 20000
-
-            self.led.duty_u16(self.brightness)
-            
             # Export changed readings
             for sensor in changed_sensors:
                 try:
