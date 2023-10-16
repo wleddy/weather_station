@@ -12,6 +12,14 @@ import os
 
 
 class Check_For_Updates:
+    """Calls ota_update to check for any files that have updates.
+        ota_update will place the changed files in a temporary directory.
+        
+        If all changed files were downloaded successfully, move them into
+        their final location and reboot the device.
+        
+        If updates were installed, return True.
+        """
     
     def __init__(self, display=None, fetch_only=False):
         self.display = display # is there a display to use?
@@ -50,19 +58,18 @@ class Check_For_Updates:
         # side to enable an update.
         # If the version time has not changed, skip the update process
         # If so add the file to the changed files list
-        file = 'settings/version.txt'
-        log.info(f'Checking {file}')
-        ota = OTA_Update(files=[file],tmp=self.tmp)
+        log.info('Checking version')
+        ota = OTA_Update(files=['settings/version.txt'],tmp=self.tmp)
         ota.update()
         if ota.changes:
             self.changes.extend(ota.changes)
         else:
-            log.info(f'{file} did not change. No update needed')
-            return True # no changes to update
+            log.info('Version did not change. No update needed')
+            return False # no changes to update
         
         # Next check 'settings/ota_files.py' to see if it needs update
         # If so, install that first, and reboot
-        log.info('Checking "settings/ota_files.py"')
+        log.info('Checking ota_files')
         ota = OTA_Update(files=['settings/ota_files.py'],tmp=self.tmp)
         ota.update()
                         
@@ -70,7 +77,7 @@ class Check_For_Updates:
             if self.fetch_only:
                 return True
             else:
-                self.install_updates(ota.changes)
+                return self.install_updates(ota.changes)
 
         # If we got this far, run the full update
         ota = OTA_Update(files=self.file_list,tmp=self.tmp)
@@ -78,33 +85,32 @@ class Check_For_Updates:
         self.changes.extend(ota.changes)
         log.info('{} files ready to update'.format(len(self.changes)))
         log.info('Updating: {}'.format(', '.join(self.changes)))
-        
-        if self.fetch_only:
-            return True
-                
+                        
         if self.changes:
-            self.install_updates(self.changes)
+            if self.fetch_only:
+                return True
+            else:
+                return self.install_updates(self.changes)
         else:
-            log.info('No update needed')
+            log.info('No updates needed')
             return False                
 
     def install_updates(self,changes):
-        log.info('Moving files')
+        """Move files from the temporary directory into final location.
+        Return False if not able to complete all moves."""
+        
+        log.info('Installing updated files')
         for file in changes:
             # build the path to the new file if needed
             file = join('/',file)
             tmp_file = join('/',self.tmp,file)
             if make_path(file):
                 #path should now exist
-                log.info(f'file: {file} being moved')
+                log.info(f'moving {file}')
                 try:
                     if exists(file):
                         os.remove(file)
-                        
-                    if make_path(file):
-                        os.rename(tmp_file,file)
-                    else:
-                        raise OSError("Unable to move file")
+                    os.rename(tmp_file,file)
                 except Exception as e:
                     log.error(f'file {file} was not in tmp dir')
                     log.exception(e,'Update aborted')

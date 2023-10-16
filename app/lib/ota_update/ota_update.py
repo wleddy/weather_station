@@ -7,10 +7,10 @@ from settings.settings import settings, log
 gc.enable()
 
 class OTA_Update:
-    """Check for updates to the micropython app in the specified.
-    
-    As a matter of policy, don't try to catch any errors here. Catch
-    them in the calling method to make connection debugging easier.
+    """Check for updates to the micropython app in the specified files.
+    Any files needing updates are placed in a temporary directory.
+    It's the responsibility of the calling method to move any changed files into
+    their final location.
     
     Args:
         url (str, optional): URL of file repository.
@@ -39,44 +39,26 @@ class OTA_Update:
         self.changes = []
         
     
+    def _exit():
+        # leave because something has gone wrong
+        self.changes = []
+        return False
+
+
     def _hash(self,data):
         if data is None:
             return ''
         
         return str(uhashlib.sha1(data.encode()).digest())
     
-    
-    def _check_hash(self, x, y):
-        if x is None or y is None:
-            return True
+
+    def _check_file(self, url,filename,local_hash):
+        """Post the local filename (path, really) and the hash
+        of that file. Server will compare hash with server's version
+        and return the server copy of the file if different or
+        the empty string if the hashs match."""
         
-        x_hash = uhashlib.sha1(x.encode())
-        y_hash = uhashlib.sha1(y.encode())
-
-        x = x_hash.digest()
-        y = y_hash.digest()
-
-        out = False
-        if str(x) == str(y):
-            out = True
-            
-        return out
-
-
-    def _get_file(self, url,hash_only=False):
-        log.debug(f'_get_file {url}, hash_only={hash_only}')
-        if hash_only:
-            url = f'{url}/hash/'
-        payload = urequests.get(url, headers=self.headers)
-        code = payload.status_code
-        log.debug(f'_get_file status code: {code}')
-        if code == 200:
-            return payload.text
-        else:
-            return None
-
-    def _post_file(self, url,filename,local_hash):
-        log.debug(f'_post_file {url}, {hash}')
+        log.debug(f'_check_file {url}, {hash}')
         data={'filename':filename,'local_hash':local_hash}
         payload = urequests.post(url, json=data, headers=self.headers)
         code = payload.status_code
@@ -106,24 +88,28 @@ class OTA_Update:
             local_hash = None
             local_version = False
             if exists(file):
-                log.info(f'Update: accessing local file {file}')
+                log.debug(f'Update: accessing local file {file}')
                 with open(file, "r") as local_file:
                     local_version = local_file.read()
                     local_hash = self._hash(local_version)
                 local_version = True
                 gc.collect()
                 
-            remote_version = self._post_file(self.url,file,local_hash)
+            remote_version = self._check_file(self.url,file,local_hash)
             if remote_version:
                 log.info(f'  +++ /{file} needs update')
-                log.debug(f'Update: downloading file {file}')
                 self.stash_file(file,remote_version)
                 del remote_version
                 gc.collect()
                 
                 self.changes.append(file)
                                 
-                
+        if self.changes:
+             return True
+        else:
+            return False
+
+
     def stash_file(self,file,remote_version):
         # place the new version in the temporary directory
         tmp_path = join('/',self.tmp,file)
@@ -135,8 +121,6 @@ class OTA_Update:
                 if not exists(tmp_path):
                     log.error(f'Update: {tmp_path} was not created')
                     _exit()
-
-                
             else:
                 # we failed
                 log.error(f'Update unable to make tmp path to {file}')
@@ -146,14 +130,5 @@ class OTA_Update:
             _exit()
                     
                     
-        if self.changes:
-             return True
-        else:
-            return False
-        
-        def _exit():
-            # leave this module because something has gone wrong
-            self.changes = []
-            return False
     
 
