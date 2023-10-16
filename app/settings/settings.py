@@ -68,7 +68,7 @@ class Settings:
 
     @property    
     def ota_source_url(self):
-        dest = '/api/get_file'
+        dest = '/api/check_file_version'
         return f'{self.host}{dest}'
     
     
