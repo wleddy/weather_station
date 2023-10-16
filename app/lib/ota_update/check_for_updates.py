@@ -106,11 +106,11 @@ class Check_For_Updates:
             tmp_file = join('/',self.tmp,file)
             if make_path(file):
                 #path should now exist
-                log.info(f'moving {file}')
                 try:
                     if exists(file):
                         os.remove(file)
                     os.rename(tmp_file,file)
+                    log.info(f'moved {file}')
                 except Exception as e:
                     log.error(f'file {file} was not in tmp dir')
                     log.exception(e,'Update aborted')
