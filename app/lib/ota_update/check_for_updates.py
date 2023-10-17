@@ -50,24 +50,8 @@ class Check_For_Updates:
             log.info('--- Fetch Only ---')
         
         delete_all(self.tmp)
-        
-        # First check the remote settings/latest_version.txt file
-        # to see if the version time marker has changes.
-        # The file contains the result of time.time()
-        # The developer is responsible for updating the file on the server
-        # side to enable an update.
-        # If the version time has not changed, skip the update process
-        # If so add the file to the changed files list
-        log.info('Checking version')
-        ota = OTA_Update(files=['settings/version.txt'],tmp=self.tmp)
-        ota.update()
-        if ota.changes:
-            self.changes.extend(ota.changes)
-        else:
-            log.info('Version did not change. No update needed')
-            return False # no changes to update
-        
-        # Next check 'settings/ota_files.py' to see if it needs update
+                
+        # First check 'settings/ota_files.py' to see if it needs update
         # If so, install that first, and reboot
         log.info('Checking ota_files')
         ota = OTA_Update(files=['settings/ota_files.py'],tmp=self.tmp)
