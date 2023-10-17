@@ -52,7 +52,7 @@ class OTA_Update:
         return str(uhashlib.sha1(data.encode()).digest())
     
 
-    def _check_file(self, url,filename,local_hash):
+    def _check_file(self,filename,local_hash):
         """Post the local filename (path, really) and the hash
         of that file. Server will compare hash with server's version
         and return the server copy of the file if different or
@@ -60,7 +60,7 @@ class OTA_Update:
         
         log.debug(f'_check_file {filename}')
         data={'filename':filename,'local_hash':local_hash}
-        payload = urequests.post(url, json=data, headers=self.headers)
+        payload = urequests.post(self.url, json=data, headers=self.headers)
         code = payload.status_code
         log.debug(f'_get_file status code: {code}')
         if code == 200:
@@ -95,7 +95,7 @@ class OTA_Update:
                 local_version = True
                 gc.collect()
                 
-            remote_version = self._check_file(self.url,file,local_hash)
+            remote_version = self._check_file(file,local_hash)
             if remote_version:
                 log.info(f'  +++ /{file} needs update')
                 self.stash_file(file,remote_version)
