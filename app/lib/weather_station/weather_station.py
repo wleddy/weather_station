@@ -49,7 +49,7 @@ class Weather_Station:
     def start(self):
         """Run the weather station display loop"""
         
-        last_update_check = time.time()
+        last_update_check = time.time() - 4000 # force update check on first run
         
         self.display.centered_text(
             "Waiting for connection", y=50, width=self.display.MAX_Y)
@@ -73,15 +73,6 @@ class Weather_Station:
         self.display.clear()
         self.display.centered_text(mes,y=50,width=self.display.MAX_Y)
             
-        if connection.is_connected():
-            # check for updates
-            self.display.centered_text(
-                "Checking for updates...", y=75, width=self.display.MAX_Y)
-            try:
-                Check_For_Updates().run()
-            except Exception as e:
-                log.exception(e,f'Initial update attempt failed')
-                
         time.sleep(2)
         self.display.clear()
 
@@ -215,10 +206,9 @@ class Weather_Station:
                 # if it's been longer than 24 hours since last sync update the clock
                 clk.set_time()
 
-            if last_update_check < time.time() - 3600: # Only check once an hour
+            if time.time() - 3600: # Only check once an hour
                 last_update_check = time.time()
                 try:
-                    # check for updates
                     Check_For_Updates().run()
                 except Exception as e:
                     log.exception(e,f"Error during update attempt")
