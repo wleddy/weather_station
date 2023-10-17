@@ -58,7 +58,7 @@ class OTA_Update:
         and return the server copy of the file if different or
         the empty string if the hashs match."""
         
-        log.debug(f'_check_file {url}, {hash}')
+        log.debug(f'_check_file {filename}')
         data={'filename':filename,'local_hash':local_hash}
         payload = urequests.post(url, json=data, headers=self.headers)
         code = payload.status_code
