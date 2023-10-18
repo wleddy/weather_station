@@ -79,42 +79,23 @@ class Weather_Station:
         # create 2 sensor instances
         sensors = [] #make a list
     
-        try:
-            sensors.append(BMX(
-                            bus_id = settings.bmx_0_bus_id,
-                            scl_pin = settings.bmx_0_scl_pin,
-                            sda_pin = settings.bmx_0_sda_pin,
-                            name = settings.bmx_0_name,
-                            sensor_id = settings.bmx_0_sensor_id,
-                            temp_calibration_list = settings.bmx_0_cal_data,
-                            temp_scale = settings.bmx_0_temp_scale,
-                            )
+        for sensor in settings.bmx_list:
+            try:
+                s = BMX(
+                        bus_id = sensor['bus_id'],
+                        scl_pin = sensor['scl_pin'],
+                        sda_pin = sensor['sda_pin'],
+                        name = sensor['name'],
+                        sensor_id = sensor['sensor_id'],
+                        temp_calibration_list = sensor['cal_data'],
+                        temp_scale = sensor['scale'],
                         )
-        except Exception as e:
-            mes = f"Outdoor sensor Failed"
-            log.exception(e,f'{mes}')
-            self.display.centered_text(mes,y=25,width=self.display.MAX_Y)
-        
-        try:
-            sensors.append(BMX(
-                            bus_id = settings.bmx_1_bus_id,
-                            scl_pin = settings.bmx_1_scl_pin,
-                            sda_pin = settings.bmx_1_sda_pin,
-                            name = settings.bmx_1_name,
-                            sensor_id = settings.bmx_1_sensor_id,
-                            temp_calibration_list = settings.bmx_1_cal_data,
-                            temp_scale = settings.bmx_1_temp_scale,
-                            )
-                        )
-        except Exception as e:
-            mes = f"Indoor sensor Failed"
-            log.exception(e,f'{mes}')
-            self.display.centered_text(mes,y=50,width=self.display.MAX_Y)
-        
-        if len(sensors) < 2:
-            time.sleep(5)
-            self.display.clear()
-    
+                sensors.append(s)
+            except Exception as e:
+                mes = f"{sensor['name']} sensor Failed"
+                log.exception(e,f'{mes}')
+                self.display.centered_text(mes,y=25,width=self.display.MAX_Y)
+
         prev_style = None
     
         while True:
