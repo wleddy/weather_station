@@ -35,7 +35,7 @@ def main():
 
 
     settings.debug = False
-    settings.testing = True #Use the testing host
+    settings.testing = False #Use the testing host
     # OTA update settings for testing
     settings.fetch_only = False
     # override the host address
