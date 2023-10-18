@@ -2,7 +2,7 @@
 
 from machine import Pin, SPI, SoftSPI
 from settings.calibration_data import calibration_data
-from instance import device
+from instance import instance
 import time
 from logging import logging as log
 import os
@@ -13,8 +13,9 @@ class Settings:
         self.testing = False
         self.calibration_data = calibration_data
         
-        self.device_id = device.device_id
-        self.sensors = device.sensors
+        self.device_id = instance.device_id
+        self.sensors = instance.sensors
+        self._host = instance.host # Use to override the default hosts
 
         # display spi setup
         self.spi = SPI(0,
@@ -69,9 +70,6 @@ class Settings:
             self.bmx_1_sensor_id = int(self.sensors[1]['sensor_id'])
             self.bmx_1_temp_scale = self.sensors[1]['scale']
             self.bmx_1_cal_data = self.calibration_data(self.bmx_1_name)
-            
-        self._host = '' # Use to override the default hosts
-
 
         
     @property
