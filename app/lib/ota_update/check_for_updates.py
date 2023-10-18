@@ -21,15 +21,14 @@ class Check_For_Updates:
         If updates were installed, return True.
         """
     
-    def __init__(self, display=None, fetch_only=False):
+    def __init__(self, display=None, fetch_only=None):
         self.display = display # is there a display to use?
         # set fetch_only True to skip the update operation
         #   set settings.fetch_only = True in main.py to run tests 
         #   without actually updating
-        if fetch_only: 
+        self.fetch_only = getattr(settings,'fetch_only',False)
+        if fetch_only is not None: 
             self.fetch_only = fetch_only 
-        else: 
-            self.fetch_only = getattr(settings,'fetch_only',False)
         
         self.tmp='/tmp/'
         self.file_list = []
