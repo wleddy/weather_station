@@ -8,7 +8,7 @@ the Real Time Clock.
 """
 
 from machine import RTC
-from settings.settings import settings
+from settings.settings import settings, log
 from wifi_connect import connection
 from settings.time_functions import Time_Functions
 import time as time
@@ -46,12 +46,12 @@ class Clock:
                 import ntptime
                 ntptime.settime() # always UTC
                 self.UTC_time = time.gmtime()
-                print("ntptime:",time.localtime())
+                log.debug(f"ntptime: {time.localtime()}")
                 self.has_time = True
                 self.set_RTC()
                 self.last_sync_seconds = time.time()
             except Exception as e:
-                print("unable to connect to time server:",str(e))
+                log.exception(e,"unable to connect to time server")
                     
  
     def set_RTC(self):
@@ -68,9 +68,7 @@ class Clock:
         #set the RTC date time to adjusted local time
         # Format: (year, month, day, <unknown>, hour, minute, second, tzinfo)
         rtc.datetime((t[0],t[1],t[2],None,t[3],t[4],t[5],None))
-        if settings.debug:
-            print("RTC time:",rtc.datetime())
-            print("Time set to:",time.localtime())
+        log.debug(f"RTC time: {rtc.datetime()}")
     
     def time_string(self,format=None):
         if not self.has_time:
@@ -79,8 +77,7 @@ class Clock:
             format = self.format
         # return the time as text
         t = time.localtime() # returns a tuple
-        if settings.debug:
-            print("time_string time:",time.localtime())
+        log.debug(f"time_string time: {time.localtime()}")
 
         hrs = t[3]
         if format == 12 and hrs > 12:
