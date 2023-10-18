@@ -58,23 +58,17 @@ class Check_For_Updates:
         ota.update()
                         
         if ota.changes:
-            if self.fetch_only:
-                return True
-            else:
-                return self.install_updates(ota.changes)
+            return self.install_updates(ota.changes)
 
         # If we got this far, run the full update
         ota = OTA_Update(files=self.file_list,tmp=self.tmp)
         ota.update()
         self.changes.extend(ota.changes)
-        log.info('{} files ready to update'.format(len(self.changes)))
-        log.info('Updating: {}'.format(', '.join(self.changes)))
                         
         if self.changes:
-            if self.fetch_only:
-                return True
-            else:
-                return self.install_updates(self.changes)
+            log.info('{} files ready to update'.format(len(self.changes)))
+            log.info('Updating: {}'.format(', '.join(self.changes)))
+            return self.install_updates(self.changes)
         else:
             log.info('No updates needed')
             return False                
@@ -90,11 +84,15 @@ class Check_For_Updates:
             tmp_file = join('/',self.tmp,file)
             if make_path(file):
                 #path should now exist
+                
                 try:
-                    if exists(file):
-                        os.remove(file)
-                    os.rename(tmp_file,file)
-                    log.info(f'moved {file}')
+                    if not self.fetch_only:
+                        if exists(file):
+                            os.remove(file)
+                        os.rename(tmp_file,file)
+                        log.info(f'moved {file}')
+                    else:
+                        log.info(f'fetch only: {file}')
                 except Exception as e:
                     log.error(f'file {file} was not in tmp dir')
                     log.exception(e,'Update aborted')
@@ -103,8 +101,8 @@ class Check_For_Updates:
                 log.info(f'Could not make path for {file}')
                 return False
         
-        if not settings.debug:
+        if not self.fetch_only:
             delete_all(self.tmp)
-        log.info("Rebooting...")
-        machine.reset()
+            log.info("Rebooting...")
+            machine.reset()
         
