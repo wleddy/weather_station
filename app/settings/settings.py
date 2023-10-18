@@ -2,6 +2,7 @@
 
 from machine import Pin, SPI, SoftSPI
 from settings.calibration_data import calibration_data
+from instance import device
 import time
 from logging import logging as log
 import os
@@ -12,12 +13,8 @@ class Settings:
         self.testing = False
         self.calibration_data = calibration_data
         
-        # Really should be loading some data from instance here...
-        self.device_id = 1
-        self.sensors = [
-                {'name': 'Outdoor', 'id':2,'scale':'f'},
-                {'name': 'Indoor', 'id':1,'scale':'f'},
-            ]
+        self.device_id = device.device_id
+        self.sensors = device.sensors
 
         # display spi setup
         self.spi = SPI(0,
@@ -25,11 +22,33 @@ class Settings:
             miso=Pin(4),
             mosi=Pin(3),
                     )
-
         self.display_dc = 6
         self.display_cs = 5
         self.display_rst = 7
         
+        self.bmx_list = []
+        for x, sensor in enumerate(self.sensors):
+            d = {}
+            
+            if x > 1:
+                break
+            
+            if x == 0:
+                d['bus_id']=1
+                d['scl_pin']=19
+                d['sda_pin']=18
+            else:
+                d['bus_id']=0
+                d['scl_pin']=1
+                d['sda_pin']=0
+                    
+            d['name'] = sensor['name']
+            d['sensor_id'] = int(sensor['sensor_id'])
+            d['scale'] = sensor['scale']
+            d['cal_data'] = self.calibration_data(sensor['name'])
+
+            self.bmx_list.append(d)
+            
         # outdoor BMX settings
         self.bmx_0_bus_id=1
         self.bmx_0_scl_pin=19
@@ -42,12 +61,12 @@ class Settings:
         
         if len(self.sensors)>0:
             self.bmx_0_name = self.sensors[0]['name']
-            self.bmx_0_sensor_id = int(self.sensors[0]['id'])
+            self.bmx_0_sensor_id = int(self.sensors[0]['sensor_id'])
             self.bmx_0_temp_scale = self.sensors[0]['scale']
             self.bmx_0_cal_data = self.calibration_data(self.bmx_0_name)
         if len(self.sensors)>1:
             self.bmx_1_name = self.sensors[1]['name']
-            self.bmx_1_sensor_id = int(self.sensors[1]['id'])
+            self.bmx_1_sensor_id = int(self.sensors[1]['sensor_id'])
             self.bmx_1_temp_scale = self.sensors[1]['scale']
             self.bmx_1_cal_data = self.calibration_data(self.bmx_1_name)
             
