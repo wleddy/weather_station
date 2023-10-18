@@ -1,7 +1,12 @@
 import sys
 import time
 import os
-import urequests
+
+try:
+    import urequests
+except ImportError:
+    import requests as urequests
+    
 import json
 
 CRITICAL = const(50)
@@ -27,6 +32,7 @@ _loggers = dict()
 
 _max_size = 15000 # max size of the log file
 _prune_size = 10000 # size to prune the log file too when too big
+
 
 class Logger:
 
@@ -72,17 +78,18 @@ class Logger:
                         err = e
                         error_text = self._get_log_str(level,f"Log post error: {str(e)}")
                 
-                prune(_filename)
                 with open(_filename, "a") as fp:
                     fp.write(log_str)
                     if error_text:
                         fp.write(error_text)
                         sys.print_exception(err, fp)
-                        message += '\n' + error_text
-                        
-                # Allways print out the log message when in settings.debug
-                if settings.debug:
+                        message += '\n' + error_text # this will print out if in debug
+                                                
+                # Allways print out the log message when in debug
+                if self.level == DEBUG:
                     print(message)
+                    
+                prune(_filename)
 
 
         except Exception as e:
@@ -113,10 +120,9 @@ class Logger:
 
     def exception(self, exception, message, *args):
         # if seetings is debug and there is a file, print the message
-        from settings.settings import settings
         self.log(ERROR, message, *args)
 
-        if _filename is None or settings.debug:
+        if _filename is None or self.level == DEBUG:
             sys.print_exception(exception, _stream)
             
         if not _filename is None:
