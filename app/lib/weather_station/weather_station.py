@@ -206,7 +206,7 @@ class Weather_Station:
                 # if it's been longer than 24 hours since last sync update the clock
                 clk.set_time()
 
-            if time.time() - 3600: # Only check once an hour
+            if last_update_check < time.time() - 3600: # Only check once an hour
                 last_update_check = time.time()
                 try:
                     Check_For_Updates().run()
