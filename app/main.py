@@ -34,7 +34,6 @@ def main():
     from weather_station.weather_station import Weather_Station
     from settings.settings import settings
 
-    log.basicConfig(filename='/log.log')
     log.setLevel(log.INFO)
     
     settings.testing = False #Use the testing host
