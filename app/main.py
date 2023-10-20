@@ -30,24 +30,27 @@
 #
 
 def main():
+    from logging import logging as log
     from weather_station.weather_station import Weather_Station
-    from settings.settings import settings, log
+    from settings.settings import settings
 
-
-    settings.debug = False
+    log.basicConfig(filename='/log.log')
+    log.setLevel(log.INFO)
+    
     settings.testing = False #Use the testing host
     # OTA update settings for testing
     settings.fetch_only = False
     # override the host address
     # settings._host = 'http://192.168.0.100:5000'
 
-    log.setLevel(log.INFO)
     log.info("-------------------- Starting up ----------------------")
 
 
     Weather_Station().start()
 
-main()
+
+if __name__ == '__main__':
+    main()
 
 
 

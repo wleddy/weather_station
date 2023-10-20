@@ -2,7 +2,8 @@
 as needed.
 """
 
-from settings.settings import settings, log
+from logging import logging as log
+from settings.settings import settings
 import machine
 from ota_update.ota_update import OTA_Update
 from settings.ota_files import get_ota_file_list

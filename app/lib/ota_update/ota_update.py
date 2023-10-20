@@ -2,7 +2,8 @@ import urequests
 import uhashlib
 import gc
 from os_path import make_path, exists, join
-from settings.settings import settings, log
+from logging import logging as log
+from settings.settings import settings
 
 gc.enable()
 

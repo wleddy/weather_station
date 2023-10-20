@@ -11,7 +11,8 @@
 """
 
 from machine import Pin, SPI, PWM, ADC, RTC
-from settings.settings import settings, log
+from logging import logging as log
+from settings.settings import settings
 import time
 import json
 import urequests

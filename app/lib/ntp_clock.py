@@ -8,7 +8,8 @@ the Real Time Clock.
 """
 
 from machine import RTC
-from settings.settings import settings, log
+from logging import logging as log
+from settings.settings import settings
 from wifi_connect import connection
 from settings.time_functions import Time_Functions
 import time as time

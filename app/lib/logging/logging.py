@@ -25,7 +25,7 @@ _level_str = {
 }
 
 _stream = sys.stderr  # default output
-_filename = None  # overrides stream
+_filename = '/log.log'  # overrides stream
 _level = INFO  # ignore messages which are less severe
 _format = "%(asctime)s:%(levelname)s:%(message)s"  # default message format
 _loggers = dict()
@@ -199,4 +199,5 @@ def prune(filename):
     except Exception as e:
         # logging this may cause an infinate loop
         print(f'Exception pruning log: {str(e)}')
+        
         

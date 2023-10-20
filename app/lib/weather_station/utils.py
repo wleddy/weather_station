@@ -9,7 +9,8 @@ gc.enable()
 
 from wifi_connect import connection
 from display.display import Display
-from settings.settings import settings, log
+from logging import logging as log
+from settings.settings import settings
 
 
 def get_display():
