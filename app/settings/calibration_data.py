@@ -1,6 +1,6 @@
 
 
-def calibration_data(name):
+def calibration_data(sensor_id):
     """Return the calibration data for the specified sensor
         
         A dict containing a list of tuples for each sensor.
@@ -14,7 +14,7 @@ def calibration_data(name):
     """
     
     l = {
-        'Indoor': [
+        2: [
             (68.2, 65.0),
             (70.2, 66.4),
             (71.6, 66.9),
@@ -25,7 +25,7 @@ def calibration_data(name):
             (81.1, 78.4),
             (84.9, 82.2),
             ],
-        'Outdoor': [
+        1: [
             (37.2, 35.4),
             (46.6, 45.3),
             (43.8, 40.1),
@@ -38,4 +38,4 @@ def calibration_data(name):
             ],
         }
 
-    return l[name]
+    return l[sensor_id]

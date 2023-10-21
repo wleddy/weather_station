@@ -68,7 +68,10 @@ class Settings:
             except:
                 d['sensor_id'] = int(sensor['sensor_id'])
             d['scale'] = sensor['scale']
-            d['cal_data'] = self.calibration_data(sensor['name'])
+            try:
+                d['cal_data'] = self.calibration_data(d['sensor_id'])
+            except:
+                d['cal_data'] = self.calibration_data(d['name'])
 
             self.bmx_list.append(d)
             
