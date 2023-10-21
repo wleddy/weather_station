@@ -11,6 +11,7 @@ from wifi_connect import connection
 from display.display import Display
 from logging import logging as log
 from settings.settings import settings
+from bmx import BMX
 
 
 def get_display():
@@ -21,6 +22,36 @@ def get_display():
     display.centered_text("Starting up...",y=25,width=display.MAX_Y)
     
     return display
+
+def get_sensors():
+            # create 2 sensor instances
+        sensors = [] #make a list
+        # get the sensor data from the host
+        try:
+            if connection.is_connected():
+                r = urequests.get(f'{settings.get_sensor_url}/{settings.device_id}')
+                if r.status_code == 200 and r.text:
+                    settings.set_bmx_list(r.text)
+        except Exception as e:
+            log.exception(e,'Unable to get sensor data from host')
+            
+        for sensor in settings.bmx_list:
+            try:
+                s = BMX(
+                        bus_id = sensor['bus_id'],
+                        scl_pin = sensor['scl_pin'],
+                        sda_pin = sensor['sda_pin'],
+                        name = sensor['name'],
+                        sensor_id = sensor['sensor_id'],
+                        temp_calibration_list = sensor['cal_data'],
+                        temp_scale = sensor['scale'],
+                        )
+                sensors.append(s)
+            except Exception as e:
+                mes = f"{sensor['name']} sensor Failed"
+                log.exception(e,f'{mes}')
+                
+        return sensors
 
            
 def export_reading(sensor):

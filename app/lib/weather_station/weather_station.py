@@ -16,13 +16,12 @@ from settings.settings import settings
 import time
 import json
 import urequests
-from bmx import BMX
 from display.display import Display, Button
 from display import glyph_metrics
 from ntp_clock import Clock
 from wifi_connect import connection
 from ota_update.check_for_updates import Check_For_Updates
-from weather_station.utils import get_display, export_reading, hinlow
+from weather_station import utils
 import gc
 gc.enable()
 
@@ -45,7 +44,7 @@ class Weather_Station:
         self.led.duty_u16(self.MAX_ADC)
         self.led.freq(5000)
         
-        self.display = get_display()
+        self.display = utils.get_display()
         
     def start(self):
         """Run the weather station display loop"""
@@ -77,34 +76,12 @@ class Weather_Station:
         time.sleep(2)
         self.display.clear()
 
-        # create 2 sensor instances
-        sensors = [] #make a list
-        # get the sensor data from the host
-        if connection.is_connected():
-            r = urequests.get(f'{settings.get_sensor_url}/{settings.device_id}')
-            if r.status_code == 200 and r.text:
-                settings.set_bmx_list(r.text)
-                
-        for sensor in settings.bmx_list:
-            try:
-                s = BMX(
-                        bus_id = sensor['bus_id'],
-                        scl_pin = sensor['scl_pin'],
-                        sda_pin = sensor['sda_pin'],
-                        name = sensor['name'],
-                        sensor_id = sensor['sensor_id'],
-                        temp_calibration_list = sensor['cal_data'],
-                        temp_scale = sensor['scale'],
-                        )
-                sensors.append(s)
-            except Exception as e:
-                mes = f"{sensor['name']} sensor Failed"
-                log.exception(e,f'{mes}')
-                self.display.centered_text(mes,y=25,width=self.display.MAX_Y)
-
         prev_style = None
     
+        sensors = utils.get_sensors() 
+
         while True:
+            
             glyphs = glyph_metrics.Metrics_78()
             if not clk.has_time and clk.last_sync_seconds < time.time() - 60:
                 # if we just tryied to get the time and failed, don't try for a while
@@ -173,7 +150,7 @@ class Weather_Station:
                 if sensor.temp_changed() or force_refresh:
                     try:
                         changed_sensors.append(sensor)
-                        hinlow(sensor.name,sensor.adjusted_temperature)
+                        utils.hinlow(sensor.name,sensor.adjusted_temperature)
                         self.display_temp(sensor,display_rows[row],glyphs)
                     except Exception as e:
                         log.exception(e,f"Sensor Error for {sensor.name}")
@@ -185,7 +162,7 @@ class Weather_Station:
             # Export changed readings
             for sensor in changed_sensors:
                 try:
-                    export_reading(sensor)
+                    utils.export_reading(sensor)
                 except Exception as e:
                     log.info(f'Sensor {sensor.name} export failed')
                 
@@ -260,7 +237,7 @@ class Weather_Station:
         
         # high and low temps
         # show the low temp if present
-        hiorlow = hinlow()
+        hiorlow = utils.hinlow()
         try:
             temp = int(float(temp))
         except:
