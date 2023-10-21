@@ -79,7 +79,12 @@ class Weather_Station:
 
         # create 2 sensor instances
         sensors = [] #make a list
-    
+        # get the sensor data from the host
+        if connection.is_connected():
+            r = urequests.get(f'{settings.get_sensor_url}/{settings.device_id}')
+            if r.status_code == 200 and r.text:
+                settings.set_bmx_list(r.text)
+                
         for sensor in settings.bmx_list:
             try:
                 s = BMX(

@@ -5,6 +5,7 @@ from settings.calibration_data import calibration_data
 from instance import instance
 import time
 from logging import logging as log
+import json
 import os
 
 class Settings:
@@ -15,6 +16,7 @@ class Settings:
         
         self.device_id = instance.device_id
         self.sensors = instance.sensors
+        self.sensor_json_file = '/instance/sensors.json'
         self._host = instance.host # Use to override the default hosts
 
         # display spi setup
@@ -31,13 +33,21 @@ class Settings:
 
     def set_bmx_list(self,sensors=None):
         if sensors is None:
-            sensors = self.sensors #Use the defaults
+            try:
+                with open(self.sensor_json_file,'r') as f:
+                    sensors = f.read()
+            except:
+                pass
+            
+        if sensors != None and isinstance(sensors,str):
+            self.sensors = json.loads(sensors)
         else:
-            if isinstance(sensors,str):
-                sensors = json.loads(sensors)
-                
+            log.debug(f'Using default sensor settings')
+            
+        log.debug(f'sensors: {self.sensors}')
+        
         self.bmx_list = []
-        for x, sensor in enumerate(sensors):
+        for x, sensor in enumerate(self.sensors):
             d = {}
             
             if x > 1:
@@ -53,34 +63,21 @@ class Settings:
                 d['sda_pin']=0
                     
             d['name'] = sensor['name']
-            d['sensor_id'] = int(sensor['sensor_id'])
+            try:
+                d['sensor_id'] = int(sensor['id'])
+            except:
+                d['sensor_id'] = int(sensor['sensor_id'])
             d['scale'] = sensor['scale']
             d['cal_data'] = self.calibration_data(sensor['name'])
 
             self.bmx_list.append(d)
             
-        # # outdoor BMX settings
-        # self.bmx_0_bus_id=1
-        # self.bmx_0_scl_pin=19
-        # self.bmx_0_sda_pin=18
-        #
-        # # indoor BMX settings
-        # self.bmx_1_bus_id=0
-        # self.bmx_1_scl_pin=1
-        # self.bmx_1_sda_pin=0
-        #
-        # if len(self.sensors)>0:
-        #     self.bmx_0_name = self.sensors[0]['name']
-        #     self.bmx_0_sensor_id = int(self.sensors[0]['sensor_id'])
-        #     self.bmx_0_temp_scale = self.sensors[0]['scale']
-        #     self.bmx_0_cal_data = self.calibration_data(self.bmx_0_name)
-        # if len(self.sensors)>1:
-        #     self.bmx_1_name = self.sensors[1]['name']
-        #     self.bmx_1_sensor_id = int(self.sensors[1]['sensor_id'])
-        #     self.bmx_1_temp_scale = self.sensors[1]['scale']
-        #     self.bmx_1_cal_data = self.calibration_data(self.bmx_1_name)
-
-        
+        # Save the newly loaded sensor info in instance
+        if sensors:
+            with open(self.sensor_json_file,'w') as f:
+                f.write(sensors)
+                
+                
     @property
     def host(self):
         """Return the host name"""
@@ -111,7 +108,7 @@ class Settings:
         return f'{self.host}{dest}'
 
     @property    
-    def get_device_url(self):
+    def get_sensor_url(self):
         #URL to get the device configuration info from the host
         dest = '/api/get_sensor_data'
         return f'{self.host}{dest}'
