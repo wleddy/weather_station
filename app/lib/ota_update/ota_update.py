@@ -52,6 +52,8 @@ class OTA_Update:
         
         return str(uhashlib.sha1(data.encode()).digest())
     
+    def _get_hash(self):
+        return uhashlib.sha1()
 
     def _check_file(self,filename,local_hash):
         """Post the local filename (path, really) and the hash
@@ -61,13 +63,26 @@ class OTA_Update:
         
         log.debug(f'_check_file {filename}')
         data={'filename':filename,'local_hash':local_hash}
-        payload = urequests.post(self.url, json=data, headers=self.headers)
-        code = payload.status_code
+        start = 0
+        got_txt = True
+        headers = self.headers
+        is_new = True
+        while got_txt:
+            limit = {'Range':f'bytes={start}-{start+1024}',}
+            headers.update(limit)
+            payload = urequests.post(self.url, json=data, headers=headers)
+            code = payload.status_code
+            if code == 200 and payload.text:
+                got_txt = True
+                start += len(payload.text)
+                self.stash_file(filename,payload.text,is_new)
+                is_new = False
+            elif not payload.text and not is_new:
+                    return True
+            else:
+                return False
+
         log.debug(f'_get_file status code: {code}')
-        if code == 200:
-            return payload.text
-        else:
-            return None
 
 
     def update(self):
@@ -91,19 +106,26 @@ class OTA_Update:
             if exists(file):
                 log.debug(f'Update: accessing local file {file}')
                 with open(file, "r") as local_file:
-                    local_version = local_file.read()
-                    local_hash = self._hash(local_version)
-                local_version = True
+                    tmp_file = True
+                    hasher = self._get_hash()
+                    while tmp_file:
+                        tmp_file = local_file.read(1024)
+                        if tmp_file:
+                            hasher.update(tmp_file.encode())
+                            local_version = True
+                            
+                local_hash = str(hasher.digest())
+                del hasher, tmp_file
                 gc.collect()
-                
+            
             remote_version = self._check_file(file,local_hash)
             if remote_version:
                 log.info(f'  +++ /{file} needs update')
-                self.stash_file(file,remote_version)
-                del remote_version
-                gc.collect()
-                
+#                 self.stash_file(file,remote_version)                
                 self.changes.append(file)
+                
+            del remote_version
+            gc.collect()
                                 
         if self.changes:
              return True
@@ -111,12 +133,15 @@ class OTA_Update:
             return False
 
 
-    def stash_file(self,file,remote_version):
+    def stash_file(self,file,remote_version,new=False):
         # place the new version in the temporary directory
         tmp_path = join('/',self.tmp,file)
         try:
             if make_path(tmp_path):
-                with open(tmp_path, "w") as local_file:
+                mode = 'a'
+                if new:
+                    mode = 'w'
+                with open(tmp_path, mode) as local_file:
                     local_file.write(remote_version)
                 # Make a final check that the file exisits in the temp dir
                 if not exists(tmp_path):
