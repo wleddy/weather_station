@@ -9,25 +9,6 @@
 
 """
 
-# # Create the instance directory if not present and insert device details
-# from os_path import make_path, exists
-# filename = '/instance/instance.py'
-#
-# device_info = """
-# device_id = 1
-#
-# sensors = [
-#     {'name':'Outdoor', 'sensor_id':2, 'scale':'f', 'device_id': device_id,},
-#     {'name':'Indoor', 'sensor_id':1, 'scale':'f', 'device_id': device_id,},
-#     ]
-#
-# host = 'http://tc.williesworkshop.net'
-#
-#     """
-# if not exists(filename) and make_path(filename):
-#     with open(filename,'w') as f:
-#         f.write(device_info)
-#
 
 def main():
     from logging import logging as log
@@ -36,10 +17,9 @@ def main():
 
     log.setLevel(log.INFO)
     
-    settings.testing = False #Use the testing host
     # OTA update settings for testing
     settings.fetch_only = False
-    # override the host address
+    # override the host address from instance/instance.py
     # settings._host = 'http://192.168.0.100:5000'
 
     log.info("-------------------- Starting up ----------------------")
