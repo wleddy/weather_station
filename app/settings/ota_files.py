@@ -9,7 +9,6 @@ def get_ota_file_list():
         'settings/time_functions.py',
         'settings/credentials.conf',
         'settings/settings.py',
-        'settings/calibration_data.py',
         'lib/display/glyph_metrics.py',
         'lib/ota_update/ota_update.py',
         'lib/ota_update/check_for_updates.py',
