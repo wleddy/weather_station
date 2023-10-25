@@ -78,7 +78,6 @@ class Weather_Station:
 
         prev_style = None
     
-        utils.set_calibration_data() # will get calibration data from host
         sensors = utils.get_sensors() 
 
         while True:

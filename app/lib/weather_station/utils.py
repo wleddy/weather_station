@@ -41,6 +41,10 @@ def set_calibration_data():
 def get_sensors():
             # create 2 sensor instances
         sensors = [] #make a list
+        
+        # besure to have up to date calibration data
+        set_calibration_data() # will get calibration data from host
+
         # get the sensor data from the host
         try:
             if connection.is_connected():
