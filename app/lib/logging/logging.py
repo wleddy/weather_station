@@ -151,28 +151,29 @@ def basicConfig(level=INFO, filename=None, filemode='a', format=None):
 def setLevel(level):
     getLogger().setLevel(level)
 
+huh = 'Undefined Message' # just to avoid error if no message provided
 
-def debug(message, *args):
+def debug(message=huh, *args):
     getLogger().debug(message, *args)
 
 
-def info(message, *args):
+def info(message=huh, *args):
     getLogger().info(message, *args)
 
 
-def warning(message, *args):
+def warning(message=huh, *args):
     getLogger().warning(message, *args)
 
 
-def error(message, *args):
+def error(message=huh, *args):
     getLogger().error(message, *args)
 
 
-def critical(message, *args):
+def critical(message=huh, *args):
     getLogger().critical(message, *args)
 
 
-def exception(exception, message, *args):
+def exception(exception, message=huh, *args):
     getLogger().exception(exception, message, *args)
     
 def prune(filename):
