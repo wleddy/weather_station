@@ -1,14 +1,13 @@
 """Keep a list of the files that need to be checked
 for OTA updates here."""
 
-import os
-
 def get_ota_file_list():
     return [ 
         'main.py',
         'settings/time_functions.py',
         'settings/credentials.conf',
         'settings/settings.py',
+        'settings/tickle.txt',
         'lib/display/glyph_metrics.py',
         'lib/ota_update/ota_update.py',
         'lib/ota_update/check_for_updates.py',
