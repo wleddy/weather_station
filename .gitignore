@@ -1,4 +1,5 @@
 /app/instance/
+/app/settings/tickle.txt
 /instance
 /env
 __pycache__
