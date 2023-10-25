@@ -30,7 +30,7 @@ class Settings:
         self.display_cs = 5
         self.display_rst = 7
         
-        self.set_bmx_list()        
+#         self.set_bmx_list()        
        
 
     def set_bmx_list(self,sensors=None):
@@ -76,9 +76,8 @@ class Settings:
                 d['cal_data'] = self.calibration_data[str(d['sensor_id'])]
             except Exception as e:
                 d['cal_data'] = []
-                log.info()
                 log.exception(e,f'Calibration failed with sensor id {d["sensor_id"]}')                   
-
+                
             self.bmx_list.append(d)
            
         log.debug(f'bmx_list: {self.bmx_list}')
