@@ -14,7 +14,8 @@ class Settings:
         self.device_id = instance.device_id
             
         self.calibration_data = {}
-
+        self.bmx_list = []
+        
         self.sensors = instance.sensors
         self.sensor_json_file = '/instance/sensors.json'
         self.calibration_json_file = '/instance/calibration_data.json'
