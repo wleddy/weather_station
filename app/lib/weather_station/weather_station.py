@@ -28,10 +28,6 @@ gc.enable()
 class Weather_Station:
     
     def __init__(self,**kwargs):
-        self.indoor_adjust = kwargs.get("indoor_adjust",0) # temperature correction in C
-        self.outdoor_adjust = kwargs.get("outdoor_adjust",0) # temperature correction in C
-        if not settings.debug:
-            settings.debug = kwargs.get("debug",False)
             
         # Set up the light sensor
         self.daylight_sensor = ADC(Pin(27))
@@ -142,7 +138,9 @@ class Weather_Station:
                 # Display the time (native coords)
                 self.draw_glyphs(glyphs,self.display_coords[0][0],self.display_coords[0][1]-pad[1]+int((self.display.MAX_Y-l)/2),t)
                 
-            display_rows = self.display_coords[-2:] #only interested in the last two elements for temperatures
+            #only interested in the last two elements for temperatures
+            display_rows = self.display_coords[-2:] 
+            
             row = 0
             changed_sensors = []
             
