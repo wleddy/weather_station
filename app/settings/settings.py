@@ -2,24 +2,20 @@
 
 from machine import Pin, SPI, SoftSPI
 from instance import instance
-import time
 from logging import logging as log
+from wifi_connect import connection
 import json
 import os
+import time
 
 class Settings:
     def __init__(self,debug=False):
         self.debug = debug
-        self.testing = False        
         self.device_id = instance.device_id
-            
-        self.calibration_data = {}
-        self.bmx_list = []
-        
-        self.sensors = instance.sensors
+        self.host = instance.host
+                    
         self.sensor_json_file = '/instance/sensors.json'
         self.calibration_json_file = '/instance/calibration_data.json'
-        self._host = instance.host # Use to override the default hosts
 
         # display spi setup
         self.spi = SPI(0,
@@ -31,10 +27,22 @@ class Settings:
         self.display_cs = 5
         self.display_rst = 7
         
-#         self.set_bmx_list()        
        
-
-    def set_bmx_list(self,sensors=None):
+    @property
+    def bmx_list(self):
+        sensors = None
+        # get the sensor data from the host
+        try:
+            if connection.is_connected():
+                r = urequests.get(f'{settings.get_sensor_url}/{settings.device_id}')
+                if r.status_code == 200 and r.text:
+                    sensors = r.text
+                    with open(self.sensor_json_file,'w') as fb:
+                        fp.write(json.dumps(sensors))
+                    
+        except Exception as e:
+            log.exception(e,'Unable to get sensor data from host')
+        
         if sensors is None:
             try:
                 with open(self.sensor_json_file,'r') as f:
@@ -43,17 +51,17 @@ class Settings:
                 pass
             
         if sensors != None and isinstance(sensors,str):
-            self.sensors = json.loads(sensors)
+            sensors = json.loads(sensors)
         else:
-            log.debug(f'Using default sensor settings')
+            log.error('sensor data not of string type')
+            sensors = []
                     
-        self.set_calibration_data()
-
-        self.bmx_list = []
-        for x, sensor in enumerate(self.sensors):
+        bmx_list = []
+        for x, sensor in enumerate(sensors):
             d = {}
             
             if x > 1:
+                # we can only handle 2 sensors at most
                 break
             
             # I2C Setup
@@ -67,10 +75,7 @@ class Settings:
                 d['sda_pin']=0
                     
             d['name'] = sensor['name']
-            try:
-                d['sensor_id'] = int(sensor['id'])
-            except:
-                d['sensor_id'] = int(sensor['sensor_id'])
+            d['sensor_id'] = int(sensor['id'])
             d['scale'] = sensor['scale']
             
             try:
@@ -79,17 +84,25 @@ class Settings:
                 d['cal_data'] = []
                 log.exception(e,f'Calibration failed with sensor id {d["sensor_id"]}')                   
                 
-            self.bmx_list.append(d)
+            bmx_list.append(d)
            
-        log.debug(f'bmx_list: {self.bmx_list}')
-
-        # Save the newly loaded sensor info in instance
-        if sensors:
-            with open(self.sensor_json_file,'w') as f:
-                f.write(sensors)
-       
-       
-    def set_calibration_data(self,cal_data=None):
+        log.debug(f'bmx_list: {bmx_list}')
+        
+        return bmx_list
+        
+        
+    @property
+    def calibration_data(self):
+        cal_data=None
+        # get the sensor data from the host
+        try:
+            if connection.is_connected():
+                r = urequests.get(f'{settings.get_calibration_url}/{settings.device_id}')
+                if r.status_code == 200 and r.text:
+                    cal_data = r.text
+        except Exception as e:
+            log.exception(e,'Unable to get calibration data from host')
+        
         if cal_data == None:
             try:
                 with open(self.calibration_json_file,'r') as f:
@@ -99,34 +112,24 @@ class Settings:
             
         if cal_data != None:
             if isinstance(cal_data,str):
-                self.calibration_data = json.loads(cal_data)
+                cal_data = json.loads(cal_data)
             elif isinstance(cal_data,dict):
-                self.calibration_data = cal_data
+                cal_data = cal_data
                 
             with open(self.calibration_json_file,'w') as f:
-                f.write(json.dumps(self.calibration_data))
+                f.write(json.dumps(cal_data))
             
-        elif not cal_data and not self.calibration_data:
-            self.calibration_data = {} # no correction
+        elif not cal_data:
+            cal_data = {} # no correction
             log.debug('No Calibration Data')
         else:
             log.debug('Using default calibration settings')
             
-        log.debug(f'calibration data: {self.calibration_data}')
+        log.debug(f'calibration data: {cal_data}')
  
+        return cal_data
         
         
-    @property
-    def host(self):
-        """Return the host name"""
-        if self._host:
-            return self._host
-        if self.testing:
-            return 'http://10.0.1.4:5000'
-        else:
-            return 'http://tc.williesworkshop.net'
-
-
     @property    
     def ota_source_url(self):
         dest = '/api/check_file_version'

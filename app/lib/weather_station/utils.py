@@ -24,36 +24,9 @@ def get_display():
     return display
 
 
-
-def set_calibration_data():
-            # create 2 sensor instances
-        # get the sensor data from the host
-        try:
-            if connection.is_connected():
-                r = urequests.get(f'{settings.get_calibration_url}/{settings.device_id}')
-                if r.status_code == 200 and r.text:
-                    settings.set_calibration_data(json.loads(r.text))
-        except Exception as e:
-            log.exception(e,'Unable to get calibration data from host')
-
-
-
 def get_sensors():
-            # create 2 sensor instances
+        # create sensor instances
         sensors = [] #make a list
-        
-        # besure to have up to date calibration data
-        set_calibration_data() # will get calibration data from host
-
-        # get the sensor data from the host
-        try:
-            if connection.is_connected():
-                r = urequests.get(f'{settings.get_sensor_url}/{settings.device_id}')
-                if r.status_code == 200 and r.text:
-                    settings.set_bmx_list(r.text)
-        except Exception as e:
-            log.exception(e,'Unable to get sensor data from host')
-            
         for sensor in settings.bmx_list:
             try:
                 s = BMX(
