@@ -20,7 +20,7 @@ def main():
     # OTA update settings for testing
     settings.fetch_only = False
     # override the host address from instance/instance.py
-    # settings._host = 'http://192.168.0.100:5000'
+    # settings.host = 'http://192.168.0.100:5000'
 
     log.info("-------------------- Starting up ----------------------")
 
