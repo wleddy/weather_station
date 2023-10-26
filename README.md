@@ -12,7 +12,7 @@ It works with either the Pico W or the original Pico and should work with most M
 In the case where the device does not have Wifi or Wifi is not available it defaults to a display
 of just the indoor and outdoor temperatures.
 
-If WiFi is available it now commects to a host web site (wleddy/temp_center) to perform remote logging and over-the-air updates. 
+If WiFi is available it now connects to a host web site (wleddy/temp_center) to perform remote logging and over-the-air updates. 
 
 ## Hardware:
 
