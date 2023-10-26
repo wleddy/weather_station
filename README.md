@@ -1,9 +1,9 @@
-# weather_station
+# Weather Station
 
 A Micropython project to create a simple temperature display using two BMP280 sensors. One to 
 display the indoor temperature and one for the outdoor.
 
-This version is set up for the Raspberry Pi Pico W with wireless connection. Currently only uses
+For the Raspberry Pi Pico W with wireless connection. Currently only uses
 the wireless connection to get the current time from a ntp service. The idea is to display the time
 as well as the temperate. 
 
@@ -11,6 +11,8 @@ It works with either the Pico W or the original Pico and should work with most M
 
 In the case where the device does not have Wifi or Wifi is not available it defaults to a display
 of just the indoor and outdoor temperatures.
+
+If WiFi is available it now commects to a host web site (wleddy/temp_center) to perform remote logging and over-the-air updates. 
 
 ## Hardware:
 
