@@ -4,6 +4,9 @@ from machine import Pin, SPI, SoftSPI
 from instance import instance
 from logging import logging as log
 from wifi_connect import connection
+if connection.wifi_available:
+    import urequests
+    
 import json
 import os
 import time
@@ -37,7 +40,7 @@ class Settings:
                 r = urequests.get(f'{settings.get_sensor_url}/{settings.device_id}')
                 if r.status_code == 200 and r.text:
                     sensors = r.text
-                    with open(self.sensor_json_file,'w') as fb:
+                    with open(self.sensor_json_file,'w') as fp:
                         fp.write(json.dumps(sensors))
                     
         except Exception as e:
@@ -50,10 +53,15 @@ class Settings:
             except:
                 pass
             
+           
         if sensors != None and isinstance(sensors,str):
             sensors = json.loads(sensors)
         else:
             log.error('sensor data not of string type')
+
+        if sensors is None:
+            # if No connection is available, subsitute some default sensor data
+            log.info('Using default sensor data')
             sensors = []
                     
         bmx_list = []
@@ -90,7 +98,7 @@ class Settings:
         
         return bmx_list
         
-        
+            
     @property
     def calibration_data(self):
         cal_data=None

@@ -3,11 +3,12 @@ Moved here to help improve ota updates"""
 
 from machine import RTC
 import json
-import urequests
 import gc
 gc.enable()
 
 from wifi_connect import connection
+if connection.wifi_available:
+    import urequests
 from display.display import Display
 from logging import logging as log
 from settings.settings import settings
@@ -48,6 +49,10 @@ def get_sensors():
            
 def export_reading(sensor):
     #Send the current temp to the temp_center app
+    
+    if not connection.wifi_available:
+        return
+    
     if not connection.isconnected():
         log.debug("Trying to connect for reading export")
         connection.connect()

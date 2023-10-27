@@ -1,18 +1,34 @@
-from settings.settings import log
-import network
+from logging import logging as log
+
+try:
+    import network
+except ImportError:
+    pass
+
 import time
 import json
+import sys
 
 class Wifi_Connect:
     
     def __init__(self,credentials="settings/credentials.conf"):
         self.credentials = credentials
         self.access_point = ""
+        _machine = sys.implementation._machine
+        self.wifi_available = True
+        if not 'Pico W' in _machine:
+            log.info(f'No WiFi available on {_machine}')
+            self.wifi_available = False
+            return
+
         self.wlan = network.WLAN(network.STA_IF)
         self.wlan.active(False)
         self.wlan.disconnect() # may not be needed
         
     def connect(self):
+        if not self.wifi_available:
+            return
+        
         if self.isconnected():
             return
         log.info('connecting...')
@@ -121,7 +137,7 @@ class Wifi_Connect:
 
                         
     def isconnected(self):
-        if not self.wlan:
+        if not self.wifi_available or not self.wlan:
             return False
         return self.wlan.isconnected()
 
@@ -130,11 +146,11 @@ class Wifi_Connect:
         return self.isconnected()
 
     def disconnect(self):
-        if self.wlan:
+        if self.wifi_available and self.wlan:
             self.wlan.disconnect()
 
     def active(self,state=None):
-        if not self.wlan:
+        if not self.wifi_available or not self.wlan:
             return False
         if state and isinstance(state,bool):
             self.wlan.active(state)
@@ -142,12 +158,17 @@ class Wifi_Connect:
         return self.wlan.active()
     
     def status(self):
+        if not self.wifi_available:
+            return -1 # same as network.STAT_CONNECT_FAIL
         if not self.wlan:
             return network.STAT_IDLE
         else:
             return self.wlan.status()
 
     def _scan(self):
+        if not self.wifi_available:
+            return []
+        else:
             scan = self.wlan.scan()
             aps_db = []
             aps_names = []

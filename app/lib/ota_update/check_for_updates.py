@@ -2,12 +2,13 @@
 as needed.
 """
 
+from wifi_connect import connection
+if connection.wifi_available:
+    from ota_update.ota_update import OTA_Update
 from logging import logging as log
 from settings.settings import settings
 import machine
-from ota_update.ota_update import OTA_Update
 from settings.ota_files import get_ota_file_list
-from wifi_connect import connection
 from os_path import make_path, delete_all, join, exists
 import os
 
@@ -24,7 +25,6 @@ class Check_For_Updates:
     
     def __init__(self, display=None, fetch_only=None):
         self.display = display # is there a display to use?
-        # set fetch_only True to skip the update operation
         #   set settings.fetch_only = True in main.py to run tests 
         #   without actually updating
         self.fetch_only = getattr(settings,'fetch_only',False)
@@ -38,7 +38,7 @@ class Check_For_Updates:
     def run(self):
         """Update any files that need it..."""
         connection.connect()
-        if not connection.is_connected():
+        if  not connection.is_connected():
             log.info('Failed to connect')
             return False
                    

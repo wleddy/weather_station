@@ -15,7 +15,8 @@ from logging import logging as log
 from settings.settings import settings
 import time
 import json
-import urequests
+
+
 from display.display import Display, Button
 from display import glyph_metrics
 from ntp_clock import Clock
@@ -47,27 +48,28 @@ class Weather_Station:
         
         last_update_check = time.time() - 4000 # force update check on first run
         
-        self.display.centered_text(
-            "Waiting for connection", y=50, width=self.display.MAX_Y)
-            
         clk = Clock()
-        clk.set_time()
-        if clk.has_time:
-            # have wifi connection now...
-            mes = "Got time: " + clk.time_string()
-            log.info(mes)
-        else:
-            mes = "Don't have time"
-            log.info(mes)
-            self.display.clear()
+        if connection.wifi_available:
             self.display.centered_text(
-                "Connection Failed", y=75, width=self.display.MAX_Y
-                )
-            time.sleep(2)
+                "Waiting for connection", y=50, width=self.display.MAX_Y)
             
-            
-        self.display.clear()
-        self.display.centered_text(mes,y=50,width=self.display.MAX_Y)
+            clk.set_time()
+            if clk.has_time:
+                # have wifi connection now...
+                mes = "Got time: " + clk.time_string()
+                log.info(mes)
+            else:
+                mes = "Don't have time"
+                log.info(mes)
+                self.display.clear()
+                self.display.centered_text(
+                    "Connection Failed", y=75, width=self.display.MAX_Y
+                    )
+                time.sleep(2)
+                
+                
+            self.display.clear()
+            self.display.centered_text(mes,y=50,width=self.display.MAX_Y)
             
         time.sleep(2)
         self.display.clear()
@@ -164,11 +166,11 @@ class Weather_Station:
                 except Exception as e:
                     log.info(f'Sensor {sensor.name} export failed')
                 
-            if clk.last_sync_seconds < (time.time() - (3600 * 24)):
+            if connection.wifi_available and clk.last_sync_seconds < (time.time() - (3600 * 24)):
                 # if it's been longer than 24 hours since last sync update the clock
                 clk.set_time()
 
-            if last_update_check < time.time() - 3600: # Only check once an hour
+            if connection.wifi_available and last_update_check < time.time() - 3600: # Only check once an hour
                 last_update_check = time.time()
                 try:
                     Check_For_Updates().run()

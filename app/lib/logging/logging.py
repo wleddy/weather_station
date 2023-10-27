@@ -1,11 +1,10 @@
 import sys
 import time
 import os
-
 try:
     import urequests
 except ImportError:
-    import requests as urequests
+    pass
     
 import json
 
@@ -69,9 +68,14 @@ class Logger:
             if _filename is None:
                 _ = _stream.write(log_str)
             else:
-                from settings.settings import settings
                 try:
-                    urequests.post(settings.log_export_url,data=json.dumps({'device_id':settings.device_id,'log':log_str}))
+                    from settings.settings import settings
+                    from wifi_connect import connection
+                    if connection.is_connected():
+                        urequests.post(settings.log_export_url,data=json.dumps({'device_id':settings.device_id,'log':log_str}))
+                except ImportError:
+                    # Settings and wifi_connect may try to log something before they're setup
+                    pass
                 except Exception as e:
                     if 'EHOSTUNREACH' not in str(e): # most likely don't have a connection
                         # log the error even thou it probably can't be sent to server...
