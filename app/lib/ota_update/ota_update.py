@@ -1,6 +1,7 @@
 import urequests
 import uhashlib
 import gc
+import json
 from os_path import make_path, exists, join
 from logging import logging as log
 from settings.settings import settings
@@ -55,34 +56,47 @@ class OTA_Update:
     def _get_hash(self):
         return uhashlib.sha1()
 
-    def _check_file(self,filename,local_hash):
-        """Post the local filename (path, really) and the hash
-        of that file. Server will compare hash with server's version
-        and return the server copy of the file if different or
-        the empty string if the hashs match."""
+    def _get_file(self,filename,local_hash):
+        """Post the path of the local file. 
+        Server will returnn a json string with the elements:
+            hash: sha1 hash string of current file
+            file_data: the text of the file
+            file_size: size of the file
+        else if file not found returns ''
+        """
         
-        log.debug(f'_check_file {filename}')
-        data={'filename':filename,'local_hash':local_hash}
+        log.debug(f'_get_file {filename}')
+        data={'path':filename}
         start = 0
-        got_txt = True
         headers = self.headers
         is_new = True
-        while got_txt:
-            limit = {'Range':f'bytes={start}-{start+1024}',}
-            headers.update(limit)
+        while True:
+            headers.update({'Range':f'bytes={start}-{start+1024}',})
             payload = urequests.post(self.url, json=data, headers=headers)
-            code = payload.status_code
-            if code == 200 and payload.text:
-                got_txt = True
-                start += len(payload.text)
-                self.stash_file(filename,payload.text,is_new)
-                is_new = False
-            elif not payload.text and not is_new:
-                    return True
+
+            if payload.status_code == 200:
+                return_data = json.loads(payload.text)
+                file_data = ''
+                file_size = 0
+                remote_hash = ''
+                if 'file_data' in return_data:
+                    file_data = return_data['file_data']
+                if 'file_size' in return_data:
+                    file_size = return_data['file_size']
+                if 'hash' in return_data:
+                    remote_hash = return_data['hash']
+
+                if not file_data and got_txt == True:
+                    return True # got changed file
+                if remote_hash != local_hash and file_data:
+                    got_txt = True
+                    start += len(file_data)
+                    self.stash_file(filename,file_data,is_new)
+                    is_new = False
+                else:
+                    return False
             else:
                 return False
-
-        log.debug(f'_get_file status code: {code}')
 
 
     def update(self):
@@ -118,15 +132,11 @@ class OTA_Update:
                 del hasher, tmp_file
                 gc.collect()
             
-            remote_version = self._check_file(file,local_hash)
+            remote_version = self._get_file(file,local_hash)
             if remote_version:
                 log.info(f'  +++ /{file} needs update')
-#                 self.stash_file(file,remote_version)                
                 self.changes.append(file)
                 
-            del remote_version
-            gc.collect()
-                                
         if self.changes:
              return True
         else:
@@ -146,15 +156,16 @@ class OTA_Update:
                 # Make a final check that the file exisits in the temp dir
                 if not exists(tmp_path):
                     log.error(f'Update: {tmp_path} was not created')
-                    _exit()
+                    self._exit()
             else:
                 # we failed
                 log.error(f'Update unable to make tmp path to {file}')
-                _exit()
+                self._exit()
         except Exception as e:
             log.exception(e,f'Update failed to save {file}')
-            _exit()
+            self._exit()
                     
                     
     
+
 
