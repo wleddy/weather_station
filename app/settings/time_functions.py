@@ -1,17 +1,20 @@
 """Info for time zones and daylight savings time periods"""
 
+from settings.settings import settings
 import time
 
 class Time_Functions:
 
     def __init__(self):
         # time zone info to adjust UTC time to local time
-        self.time_zone_offset = -8 # the adjustment for standard time
+        self.time_zone_offset = settings.UTC_offset # the adjustment for standard time
         self.daylight_saving_periods = []
         self.daylight_period_setup()
 
     
     def daylight_period_setup(self):
+        """Set up the start and end times for DST.
+        Results are in UTC time."""
 
         # for 2023
         #DTS begins Sunday, March 12, 2023, 2:00:00 am
@@ -40,6 +43,8 @@ class Time_Functions:
     def is_daylight_savings(self):
         # Return True if it is daylight savings time else false
         time_seconds = time.mktime(time.localtime())
+        # convert to UTC time
+        time_seconds += (3600 * self.time_zone_offset)
         
         # check if we are in daylight savings time
         for period in self.daylight_saving_periods:
