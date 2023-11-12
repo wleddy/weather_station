@@ -16,6 +16,12 @@ class Settings:
         self.debug = debug
         self.device_id = instance.device_id
         self.host = instance.host
+        try:
+            utc = instance.UTC_offset
+        except NameError:
+            utc = -8
+            
+        self.UTC_offset = utc
                     
         self.sensor_json_file = '/instance/sensors.json'
         self.calibration_json_file = '/instance/calibration_data.json'
@@ -41,7 +47,7 @@ class Settings:
                 if r.status_code == 200 and r.text:
                     sensors = r.text
                     with open(self.sensor_json_file,'w') as fp:
-                        fp.write(json.dumps(sensors))
+                        fp.write(sensors)
                     
         except Exception as e:
             log.exception(e,'Unable to get sensor data from host')
@@ -140,7 +146,7 @@ class Settings:
         
     @property    
     def ota_source_url(self):
-        dest = '/api/check_file_version'
+        dest = '/api/get_file'
         return f'{self.host}{dest}'
     
     
