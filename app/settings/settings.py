@@ -16,10 +16,11 @@ class Settings:
         self.debug = debug
         self.device_id = instance.device_id
         self.host = instance.host
+        utc = -8
         try:
             utc = instance.UTC_offset
-        except NameError:
-            utc = -8
+        except:
+            pass
             
         self.UTC_offset = utc
                     

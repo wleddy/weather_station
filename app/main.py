@@ -20,7 +20,7 @@ def main():
     # OTA update settings for testing
     settings.fetch_only = False
     # override the host address from instance/instance.py
-    settings.host = 'http://wide-ride.local:5000'
+    # settings.host = 'http://wide-ride.local:5000'
 
     log.info("-------------------- Starting up ----------------------")
 
