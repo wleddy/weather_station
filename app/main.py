@@ -14,7 +14,8 @@ def main():
     from logging import logging as log
     from weather_station.weather_station import Weather_Station
     from settings.settings import settings
-
+    import machine
+    
     log.setLevel(log.INFO)
     
     # OTA update settings for testing
@@ -24,8 +25,11 @@ def main():
 
     log.info("-------------------- Starting up ----------------------")
 
-
-    Weather_Station().start()
+    try:
+        Weather_Station().start()
+    except Exception as e:
+        log.exception(e,'Exception in main.py')
+        machine.reset()
 
 
 if __name__ == '__main__':
