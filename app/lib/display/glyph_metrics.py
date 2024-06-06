@@ -114,16 +114,16 @@ class Metrics_27(Metrics):
         self.path = path
         super().__init__(self.path)
 
-        self.WIDTH = 19
+        self.WIDTH = 18
         self.HEIGHT = 27
         
         # most of the characters will be WIDTH wide
         # some narrower chars are listed here.
-        self.DOT_WIDTH = 15
-        self.COLON_WIDTH = 15
-        self.DASH_WIDTH = 15
-        self.ONE_WIDTH = 15
-        self.SPACE_WIDTH = 15
+        self.DOT_WIDTH = 14
+        self.COLON_WIDTH = 14
+        self.DASH_WIDTH = 14
+        self.ONE_WIDTH = 14
+        self.SPACE_WIDTH = 14
 
 
 class Metrics_37(Metrics):
