@@ -79,7 +79,7 @@ class Weather_Station:
         sensors = utils.get_sensors() 
 
         while True:
-            
+            gc.collect()
             glyphs = glyph_metrics.Metrics_78()
             if not clk.has_time and clk.last_sync_seconds < time.time() - 60:
                 # if we just tryied to get the time and failed, don't try for a while

@@ -1,6 +1,7 @@
 import sys
 import time
 import os
+import gc
 try:
     import urequests
 except ImportError:
@@ -40,22 +41,28 @@ class Logger:
         self.level = _level
 
     def _get_log_str(self,level,message,*args):
-        if args:
-            message = message % args
+        try:
+            if args:
+                message = message % args
 
-        record = dict()
-        record["levelname"] = _level_str.get(level, str(level))
-        record["level"] = level
-        record["message"] = message
-        record["name"] = self.name
-        tm = time.localtime()
-        record["asctime"] = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}" \
-            .format(tm[0], tm[1], tm[2], tm[3], tm[4], tm[5])
+            record = dict()
+            record["levelname"] = _level_str.get(level, str(level))
+            record["level"] = level
+            record["message"] = message
+            record["name"] = self.name
+            tm = time.localtime()
+            record["asctime"] = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}" \
+                .format(tm[0], tm[1], tm[2], tm[3], tm[4], tm[5])
 
-        return _format % record + "\n"
+            return _format % record + "\n"
+        except Exception as e:
+           # sometimes the message is not a compatible str object
+           message = f"Invalid message. Exception: {str(e)}"
+           self._get_log_str(level,message,*args)
     
         
     def log(self, level, message, *args):
+        gc.collect()
         if level < self.level:
             return
 
