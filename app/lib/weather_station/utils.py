@@ -50,7 +50,7 @@ def get_sensors():
 def export_reading(sensor):
     #Send the current temp to the temp_center app
     
-    if not connection.wifi_available:
+    if not connection.is_connected:
         return
     
     if not connection.isconnected():
@@ -71,7 +71,7 @@ def export_reading(sensor):
                         )
                     )
 
-            log.debug(f"Got response: {r.text}")
+            log.debug(f"Response from data upload: {r.text}")
             if r.text.upper() != 'OK':
                 log.info(f'export_reading result: r.text[0:80]')
                 

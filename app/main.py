@@ -19,7 +19,7 @@ def main():
     log.setLevel(log.INFO)
     
     # OTA update settings for testing
-    settings.fetch_only = False
+    settings.fetch_only = True
     # override the host address from instance/instance.py
     # settings.host = 'http://wide-ride.local:5000'
 
@@ -28,7 +28,7 @@ def main():
     try:
         Weather_Station().start()
     except Exception as e:
-        log.exception(e,'Exception in main.py')
+        print('restarting...')
         machine.reset()
 
 

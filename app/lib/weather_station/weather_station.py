@@ -166,11 +166,11 @@ class Weather_Station:
                 except Exception as e:
                     log.info(f'Sensor {sensor.name} export failed')
                 
-            if connection.wifi_available and clk.last_sync_seconds < (time.time() - (3600 * 1)):
+            if connection.is_connected() and clk.last_sync_seconds < (time.time() - (3600 * 1)):
                 # if it's been longer than 1 hour since last sync update the clock
                 clk.set_time()
 
-            if connection.wifi_available and last_update_check < time.time() - 3600: # Only check once an hour
+            if connection.is_connected() and last_update_check < time.time() - 86400: # Only check once a day
                 last_update_check = time.time()
                 try:
                     Check_For_Updates().run()

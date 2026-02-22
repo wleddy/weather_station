@@ -1,6 +1,7 @@
 import sys
 import time
 import os
+import os_path
 import gc
 try:
     import urequests
@@ -29,9 +30,6 @@ _filename = '/log.log'  # overrides stream
 _level = INFO  # ignore messages which are less severe
 _format = "%(asctime)s:%(levelname)s:%(message)s"  # default message format
 _loggers = dict()
-
-_max_size = 15000 # max size of the log file
-_prune_size = 10000 # size to prune the log file too when too big
 
 
 class Logger:
@@ -78,7 +76,7 @@ class Logger:
                 try:
                     from settings.settings import settings
                     from wifi_connect import connection
-                    if connection.is_connected():
+                    if connection.is_connected() and settings.log_export_url:
                         urequests.post(settings.log_export_url,data=json.dumps({'device_id':settings.device_id,'log':log_str}))
                 except ImportError:
                     # Settings and wifi_connect may try to log something before they're setup
@@ -88,6 +86,8 @@ class Logger:
                         # log the error even thou it probably can't be sent to server...
                         err = e
                         error_text = self._get_log_str(level,f"Log post error: {str(e)}")
+
+                prune(_filename)
                 
                 with open(_filename, "a") as fp:
                     fp.write(log_str)
@@ -99,9 +99,13 @@ class Logger:
                 # Allways print out the log message when in debug
                 if self.level == DEBUG:
                     print(message)
-                    
-                prune(_filename)
-
+                            
+        except OSError as e:
+            # Check if flash is full
+            if int(os_path.flash_stats()['free'] ) < 1024:
+                # clear the log file
+                open(filename,'w').close()
+                self.log(self.DEBUG,'____ Flash was full. Log purged _____')
 
         except Exception as e:
             print("--- Logging Error ---")
@@ -109,7 +113,9 @@ class Logger:
             print("Message: '" + message + "'")
             print("Arguments:", args)
             print("Format String: '" + _format + "'")
-            raise e
+            
+            if self.level >= DEBUG:
+                raise e
 
     def setLevel(self, level):
         self.level = level
@@ -188,16 +194,20 @@ def exception(exception, message=huh, *args):
     getLogger().exception(exception, message, *args)
     
 def prune(filename):
-    # reduce log file to no more than 
+    # reduce log file to no more than
     try:
-        s = os.stat(filename)[6] #file size in bytes
+        stat = os_path.flash_stat(filename)
+        size = stat['size'] #file size in bytes
+        free = stat['free'] #all free space
+        prune_size = int(size * 0.66) # reduce by 1/3 if needed
         tmp_file = filename + 'tmp'
-        
-        if s > _max_size:
+#         print('size',size,'prune to',prune_size,'free',free)
+        if size > free * 0.5:
             with open(filename,'r') as old:
-                old.seek(s - _prune_size)
                 with open(tmp_file,'w') as new:
                     new.write('------------- pruned ----------------\n')
+                    old.seek(size - prune_size)
+                    old.readline() #consume any left over for line
                     x = True
                     while x:
                         x = old.readline()
@@ -208,6 +218,11 @@ def prune(filename):
             os.remove(filename)
             os.rename(tmp_file,filename)
             
+    except OSError as e:
+        # just empty the files
+        open(filename,'w').close()
+        info(f'File purge failed: {str(e)}')
+        
     except Exception as e:
         # logging this may cause an infinate loop
         print(f'Exception pruning log: {str(e)}')
